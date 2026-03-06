@@ -116,7 +116,7 @@ export default class ReceiptView {
         //populate #itemsSummary
         const summaryMap = new Map<string, Array<Product>>();
 
-        for (const item of receipt.items) {
+        for (const item of receipt.cart) {
             let type = `${item.constructor.name}`;
             let currentList = summaryMap.get(type);
             if (currentList) {

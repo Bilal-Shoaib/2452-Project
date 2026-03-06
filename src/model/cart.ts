@@ -16,6 +16,10 @@ export default class Cart {
     constructor() {
         this.#products = new Array<Product>();
         this.#listeners = new Array<Listener>();
+
+        //no need for pre-conditions in the constructor since a new cart will
+        // always have an empty list of listeners and products, does not depend on any other
+        // factors
     }
 
     /**
@@ -28,11 +32,9 @@ export default class Cart {
     public checkout(): Receipt {
         //no need to check if the products array is null,
         // it is initialized in the constructor and cannot be null
-        if (this.isEmpty()) {
-            throw new InvalidCheckoutException();
-        } else {
-            return new Receipt(this);
-        }
+        
+        //receipt class will throw an exception if the cart is empty
+        return new Receipt(this);
     }
 
     /**

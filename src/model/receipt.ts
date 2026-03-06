@@ -1,29 +1,28 @@
 import { assert } from "../assertions";
 
-import Cart from "./cart";
+import Cart, { InvalidCheckoutException } from "./cart";
 
 /** 
- * The `Receipt` class in TypeScript provides methods to summarize items based on type and calculate 
- * the total price of all items in a collection. 
+ * The `Receipt` class in TypeScript provides methods to summarize cart based on type and calculate 
+ * the total price of all cart in a collection. 
  */
 export default class Receipt {
-    readonly #items: Cart;
+    readonly cart: Cart;
 
-    constructor(items: Cart) {
-        this.#items = items;
-    }
+    constructor(cart: Cart) {
 
-    /**
-     * This function returns the Cart object.
-     * @returns The cart's `items`.
-     */
-    public get items(): Cart {
-        return this.#items;
+        //we have not allowed a receipt to be created for an empty cart by convention
+        //  this responsibility is an invariant of the receipt class
+        if (cart.isEmpty()) {
+            throw new InvalidCheckoutException();
+        }
+
+        this.cart = cart;
     }
     
     /**
-     * The function calculates the total price of all items in a collection.
-     * @returns  the sum of prices of all items in the `#items` array.
+     * The function calculates the total price of all cart in a collection.
+     * @returns  the sum of prices of all cart in the `cart` array.
      */
     public get total(): number {
 
@@ -31,7 +30,7 @@ export default class Receipt {
 
         let sum = 0;
         
-        for (const item of this.#items) {
+        for (const item of this.cart) {
             sum += item.price;
         }
 
