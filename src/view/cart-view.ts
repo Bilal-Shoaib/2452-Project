@@ -1,6 +1,6 @@
 import Cart from "../model/cart";
 
-import CartController from "../controller/cart-controller.ts";
+import type CartController from "../controller/cart-controller.ts";
 
 /**
  * The `CartView` class is responsible for rendering the shopping cart interface, allowing users to view
@@ -23,7 +23,7 @@ export default class CartView {
 
         //check if the current #app div already has a #cart-container div, if not create one and append it to the #app div
         let container = document.querySelector("#cart-container");
-
+        
         if (!container) {
             container = document.createElement("div");
             container.id = "cart-container";
@@ -50,6 +50,12 @@ export default class CartView {
                 "click",
                 () => { this.#cartController.showCreateProductView(); }
             );
+
+        //! is this okay, looks like patchwork
+        //! problem: without this, the cart items don't show up on the page after a refresh
+        if (!cart.isEmpty()) {
+            this.notify();
+        }
     }
 
     /**

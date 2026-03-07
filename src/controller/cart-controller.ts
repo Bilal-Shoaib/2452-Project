@@ -1,6 +1,16 @@
-import Cart, { InvalidCheckoutException } from '../model/cart.ts';
+import { assert } from '../assertions.ts';
+
+import Cart from '../model/cart.ts';
 import Product from '../model/Product/product.ts';
+
+//! is this okay just to register these classes?
+//!problem: without this, the fruit and vegetable classes are imported nowhere,
+//!  so the classes cannot register themselves to the factory
+import Fruit  from "../model/Product/fruit.ts";
+import Vegetable from "../model/Product/vegetable.ts";
+
 import Receipt from '../model/receipt.ts';
+import ProductFactory from '../model/Product/factory.ts';
 
 import CartView from '../view/cart-view.ts';
 import CreateProductView from '../view/create-product-view.ts';
@@ -11,29 +21,40 @@ import ReceiptView from '../view/receipt-view.ts';
  * creating new products, and resetting the cart state.
  */
 export default class CartController {
-    #cart: Cart;
-    #cartView: CartView;
-    #receiptView: ReceiptView;
+    #cart?: Cart;
+    #cartView?: CartView;
+    #receiptView?: ReceiptView;
     #createProductView?: CreateProductView;
 
+
     constructor() {
-        this.#cart = new Cart();
-        this.#cartView = new CartView(this.#cart, this);
-        this.#receiptView = new ReceiptView(this);
+
     }
 
-    /**
-     * The function `addProductToCart` adds a product to the cart.
-     * @param {Product} product - Product object that represents the product being added to the cart.
-     */
-    public addProductToCart(product: Product): void {
+    public addProductToCart(type: string): void {
 
-        //no need to check if the product is null, typescript will not allow it to be null
-        //no other preconditions to check, the product is valid and can be added to the cart
+        const product = ProductFactory.create(type);
 
-        this.#cart.addItem(product);
+        //each product class must register itself to the productfactory
+        assert(
+            product instanceof Product && product instanceof ProductFactory.getCreator(type),
+            `Product type ${type} must be registered with the ProductFactory`
+        );
 
-        //no postconditions to check, the 'non-null' product will be added to the cart
+        //a valid product has been created, so we can add it to cart
+
+        //at this point, we can assert that the cart is not empty
+        //  this is because the only point where this method is called is after cart-view is initialized
+        //  which means we have also set this.#cart :)
+        this.#cart!.addItem(product);
+
+        //no post-conditions needed if the precondition is satisfied
+    }
+
+    public showCart(cart: Cart): void {
+        this.#cart = cart; 
+        this.#cartView = new CartView(cart, this);
+        this.#receiptView = new ReceiptView(this);
     }
 
     /**
@@ -43,7 +64,7 @@ export default class CartController {
 
         //this method does not have any preconditions to check, it simply generates a view to create a new product
 
-        this.#createProductView = new CreateProductView(this);
+        this.#createProductView = new CreateProductView(this, ProductFactory.prices, ProductFactory.types);
 
         //no postconditions to check as well
     }
@@ -58,7 +79,12 @@ export default class CartController {
         // we throw an exception in that case to let the view know. The exception is thrown from cart.
         //no postconditions to check, if the cart is empty, the method simply alerts the receipt view
 
-        return this.#cart.checkout();
+        //at this point, we can assert that the cart is not empty
+        //  this is because the only point where this method is called is after receipt-view is initialized
+        //  which means we have also set this.#cart :)
+        assert(this.#cart != undefined, "Cart cannot be undefined when we checkout.")
+
+        return this.#cart!.checkout();
     }
 
     /**
@@ -70,8 +96,21 @@ export default class CartController {
         //perhaps we could use DIP and inject these new instances but this was 
         //said to be just fine in class :)
 
-        this.#cart = new Cart();
-        this.#cartView = new CartView(this.#cart, this);
+        //we can assert that cart is not undefined at this point because this method 
+        // is called by the receipt-view after a successful checkout which means 
+        // that this.#cart is already set :)
+
+        assert(this.#cart != undefined, "Cart cannot be undefined when we reset the cart-controller.")
+
+        this.#cart = new Cart(this.#cart!.cashier);
+
+        //!is this fine here in cart controller? looks bad/patchwork
+        //! maybe its the responsibility of the cashier controller somehow?
+        this.#cart.cashier.currentCart = this.#cart;
+
+        this.#cartView = new CartView(this.#cart!, this);
         this.#receiptView = new ReceiptView(this);
     }
 }
+
+export class CartNotDefinedException extends Error {}

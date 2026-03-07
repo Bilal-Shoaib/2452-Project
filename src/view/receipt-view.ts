@@ -1,8 +1,8 @@
 import Receipt from "../model/receipt";
 
-import CartController from "../controller/cart-controller.ts";
 import { InvalidCheckoutException } from "../model/cart.ts";
 import type Product from "../model/Product/product.ts";
+import type CartController from "../controller/cart-controller.ts";
 
 /**
  * The `ReceiptView` class is responsible for rendering the receipt interface, allowing users to view
@@ -15,7 +15,9 @@ export default class ReceiptView {
     #controller: CartController;
     #itemsSummary: HTMLUListElement;
     
-    constructor(controller: CartController) {
+    constructor(controller: CartController
+
+    ) {
         this.#controller = controller;
 
         //precondition: check the existence of the #receipt-container div in the #app div
@@ -116,7 +118,7 @@ export default class ReceiptView {
         //populate #itemsSummary
         const summaryMap = new Map<string, Array<Product>>();
 
-        for (const item of receipt.items) {
+        for (const item of receipt.cart) {
             let type = `${item.constructor.name}`;
             let currentList = summaryMap.get(type);
             if (currentList) {

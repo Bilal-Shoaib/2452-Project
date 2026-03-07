@@ -1,24 +1,23 @@
+import type { Temporal } from "@js-temporal/polyfill";
 import { assert } from "../assertions";
 
-import Cart from "./cart";
+
+import type Cart from "./cart";
+import type Cashier from "./cashier";
 
 /** 
  * The `Receipt` class in TypeScript provides methods to summarize items based on type and calculate 
  * the total price of all items in a collection. 
  */
 export default class Receipt {
-    readonly #items: Cart;
+    readonly cart: Cart;
+    readonly cashier: Cashier;
+    readonly timestamp: Temporal.Instant;
 
-    constructor(items: Cart) {
-        this.#items = items;
-    }
-
-    /**
-     * This function returns the Cart object.
-     * @returns The cart's `items`.
-     */
-    public get items(): Cart {
-        return this.#items;
+    constructor(cart: Cart, cashier: Cashier, timestamp: Temporal.Instant) {
+        this.cart = cart;
+        this.cashier = cashier;
+        this.timestamp = timestamp;
     }
     
     /**
@@ -31,7 +30,7 @@ export default class Receipt {
 
         let sum = 0;
         
-        for (const item of this.#items) {
+        for (const item of this.cart) {
             sum += item.price;
         }
 

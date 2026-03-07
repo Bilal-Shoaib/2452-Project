@@ -4,32 +4,36 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>2452-project</title>
+    <title>2452-project-repl</title>
   </head>
   <body>
-    <div id="app"></div>
-
-    <script type="module" src="/src/main.ts"></script>
     <script
         src="https://cdn.jsdelivr.net/npm/@electric-sql/pglite-repl/dist-webcomponent/Repl.js"
         type="module"
     ></script>
 
-    <details>
-      <summary>Show/Hide REPL</summary>
     <!-- Include the Repl web component in your page -->
     <pglite-repl id="repl"></pglite-repl>
 
-    </details>
-
     <script type="module">
-        import db from './src/model/connection.ts';
+        import { PGlite } from 'https://cdn.jsdelivr.net/npm/@electric-sql/pglite/dist/index.js'
+        
+        import ddl from './create-tables.sql?raw'
+
+        // Create a PGlite instance
+        // make sure that the database is persisted across refreshes
+        const pg = new PGlite('idb://2452-project')
+
+        console.log(ddl);
+
+        //populate the structure in our database using the create-tables.sql file
+        pg.exec(ddl);
 
         // Retrieve the Repl element
         const repl = document.getElementById('repl')
 
         // REPL to your PGlite instance
-        repl.pg = db()
+        repl.pg = pg
     </script>
   </body>
 </html>

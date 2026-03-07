@@ -1,6 +1,9 @@
-import Product from "./Product/product";
 import Receipt from "./receipt";
+import Product from "./Product/product";
+import type Cashier from "./cashier";
 import type Listener from "./listener";
+
+import db from './connection.ts';
 
 /**
  * The `Cart` class represents a shopping cart that can hold products 
@@ -10,12 +13,69 @@ import type Listener from "./listener";
  * The class also implements a custom iterator to allow iteration over the products in the cart.
  */
 export default class Cart {
+    readonly cashier: Cashier;
+    #id?: number;
+
     #products: Array<Product>;
     #listeners: Array<Listener>;
 
-    constructor() {
+    constructor(cashier: Cashier) {
+        this.cashier = cashier;
+
         this.#products = new Array<Product>();
         this.#listeners = new Array<Listener>();
+    }
+
+    static async saveCart(cart: Cart): Promise<Cart> {
+
+        if (!cart.#id) {
+            let results = await db().query<{ id: number }>(
+                "insert into cart(id, cashier_name) values(default, $1) returning id",
+                [cart.cashier.name]
+            );
+
+            cart.#id = results.rows[0].id;
+        }
+
+        //we can guarantee that by the time we get here, cart will have an id for sure :)
+        for (let product of cart) {
+            if (!product.id) {
+                Product.saveProduct(product, cart.#id);
+            }
+        }
+        
+        return cart;
+    }
+
+    static async getCashiersCart(cashier: Cashier): Promise<Cart> {
+
+        let cart = new Cart(cashier);
+        //cart stores a cashier's name as id,
+        //we want to find that cart
+        const results = await db().query<{ id: number }>(
+            "select id from cart where cashier_name = $1",
+            [cashier.name]
+        );
+
+        //if there is such a cart, we will fill it up
+        if (results.rows.length > 0) {
+            cart.#id = results.rows[0].id;
+            await Product.getProducts(cart);
+
+        //otherwise, we will create a new empty cart
+        } else {
+            throw new NoCartForCashierException();
+        }
+
+        return cart;
+    }
+
+    public get id(): number | undefined {
+        return this.#id;
+    }
+
+    public set id(id: number) {
+        this.#id = id;
     }
 
     /**
@@ -28,23 +88,27 @@ export default class Cart {
     public checkout(): Receipt {
         //no need to check if the products array is null,
         // it is initialized in the constructor and cannot be null
-        if (this.isEmpty()) {
-            throw new InvalidCheckoutException();
-        } else {
-            return new Receipt(this);
+
+        //this cart must be in the database to be checked out
+        if (this.#id == undefined) {
+            throw new CartNotPersistedException();
         }
+        
+        return this.cashier.generateReceipt();
     }
 
     /**
      * The addItem function adds a product to a list and notifies all observers.
      * @param {Product} item - the product that you want to add to the list of products in the class.
      */
-    public addItem(item: Product): void {
+    public async addItem(item: Product) {
 
         //no need to check if the item is null, typescript does not allow it to be null
         //no other validation is needed, the product class should take care of that
 
         this.#products.push(item);
+        
+        await Cart.saveCart(this);
         this.#notifyAll();
 
         //no post conditions to check, the 'non-null' item is added to the products array 
@@ -117,3 +181,5 @@ export default class Cart {
 }
 
 export class InvalidCheckoutException extends Error {}
+export class CartNotPersistedException extends Error {}
+export class NoCartForCashierException extends Error {}

@@ -10,27 +10,30 @@ date: Winter 2026
 classDiagram
     class Product {
         <<abstract class>>
-        + get price() number
+        + readonly price number
     }
 
     class Fruit {
-        - price number
-        + get price() number
+        + readonly number price
+        + readonly cart Cart
     }
     note for Fruit "Class invariants: <ul>
     <li> price is a non-negative number
+    <li> cart is never null
     </ul>"
     
     class Vegetable {
-        - price number
-        + get price() number
+        + readonly number price
+        + readonly Cart cart
     }
     note for Vegetable "Class invariants: <ul>
     <li> price is a non-negative number
+    <li> cart is never null
     </ul>"
 
     class Cart {
-        - Array~Product~ products
+        - readonly Array~Product~ products
+        + readonly Cashier cashier
 
         + checkout() Receipt
         + addItem(Product item) void
@@ -39,26 +42,54 @@ classDiagram
     }
     note for Cart "Note: <ul>
     <li> products can be empty, but never null
+    <li> cashier is never null
     </ul>"
     
     class Receipt {
         <<record>>
+        + readonly Cart cart
+        + readonly Cashier cashier
 
-        - Cart items
-
-        + get cart() Cart
         + get total() number
     }
     note for Receipt "Note: <ul>
-    <li> items can be empty, but never null
+    <li> cart can be empty, but never null
+    <li> cashier is never null
+    </ul>"
+
+    class Cashier {
+        + readonly string name
+        + readonly string password
+
+        - Array~Cart~ currentCarts
+        - Array~Receipt~ receiptRecord
+
+        + static getAllCashiers() Array~Cashier~
+        + generateReceipt(Cart cart) Receipt
+    }
+    note for Cashier "Note: <ul>
+    <li> name is never null and is non-empty
+    <li> password is never null and is non-empty
+
+    <li> currentCarts is never null
+    <li> receiptRecord is never null
     </ul>"
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Specifications %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     Fruit --|> Product
     Vegetable --|> Product
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Relationships %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Fruit --o Cart
+    Vegetable --o Cart
+
     Cart --* Product
+    Cart --o Cashier
+    
     Receipt --* Cart
+    Receipt --o Cashier
+    
+    Cashier --* Cart
+    Cashier --* Receipt
 ```
 
 Some more information about these domain objects:
