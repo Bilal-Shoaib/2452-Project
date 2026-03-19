@@ -2,6 +2,7 @@ import type CartController from "../controller/cart-controller";
 import CashierController from "../controller/cashier-controller";
 import Cashier, { CashierNotFoundException, InvalidNameException, InvalidPasswordException, PasswordMismatchException } from "../model/cashier";
 import CreateCashierView from "./create-cashier-view";
+import { assert } from "../assertions";
 
 export default class LoginCashierView {
     #cashierController: CashierController;
@@ -63,8 +64,10 @@ export default class LoginCashierView {
             this.#dialog.close();
             this.#dialog.remove();
 
+            assert(cashier.currentCart, "Cashier's current cart must not be undefined after successful login.");
+
             this.#cashierController.setCurrentCashier(cashier);
-            this.#cartController.showCart(cashier.currentCart);
+            this.#cartController.showCart(cashier.currentCart!);
 
         } catch (e: any) {
             if (e instanceof InvalidNameException) {

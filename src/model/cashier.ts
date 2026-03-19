@@ -1,11 +1,7 @@
 import { assert } from "../assertions";
-import { Temporal } from "@js-temporal/polyfill";
 
-import Cart, { NoCartForCashierException } from "./cart";
-import Receipt from "./receipt";
+import Cart from "./cart";
 import db from './connection.ts';
-
-import { InvalidCheckoutException } from "./cart";
 
 export default class Cashier {
     readonly name: string;
@@ -29,7 +25,7 @@ export default class Cashier {
         this.#checkCashier();
     }
 
-    static async saveCashier(cashier: Cashier): Promise<Cashier> {
+    public static async saveCashier(cashier: Cashier): Promise<Cashier> {
         //no need to do anything on conflicts, we will only save a cashier once
         await db().query(
             "insert into cashier(name, password) values($1, $2) on conflict do nothing",
@@ -38,9 +34,18 @@ export default class Cashier {
 
         return cashier;
     }
+    public static async updateCashiersCart(cashier: Cashier, cart: Cart): Promise<Cashier> {
+        console.log("2. cashier.updateCashiersCart: before await query.")
+        console.log([cashier, cart])
+        await db().query(
+            "update cashier set current_cart_id = $1 where name = $2",
+            [cart.id, cashier.name]
+        )
+        return cashier;
+    }
 
-    static async getCashier(cashier: Cashier): Promise<Cashier> {
-        let results = await db().query<{password: string}>(
+    public static async getCashier(cashier: Cashier): Promise<Cashier> {
+        let results = await db().query<{password: string, current_cart_id: number}>(
             "select password from cashier where name = $1",
             [cashier.name]
         )
@@ -51,17 +56,8 @@ export default class Cashier {
             if (cashier.password != results.rows[0].password) {
                 throw new PasswordMismatchException();
             }
-            //try to get the cashier's cart, if not found, assign them a new cart
-            try {
-                cashier.#currentCart = await Cart.getCashiersCart(cashier);
-                
-            //in reality, we are never executing this code chunk, this is just a safety measure
-            } catch (e: any) {
-                if (e instanceof NoCartForCashierException) {
-                    cashier.#currentCart = new Cart(cashier);
-                    Cart.saveCart(cashier.#currentCart);
-                }
-            }
+
+            cashier.#currentCart = await Cart.getCashiersCart(cashier, results.rows[0].current_cart_id);
         
         //otherwise, throw an exception that the cashier is not found
         } else {
@@ -69,6 +65,23 @@ export default class Cashier {
         }
 
         return cashier
+    }
+    
+    public static async newCashier(cashier: Cashier) {
+        let results = await db().query<{name: string}>(
+            "select name from cashier where name = $1",
+            [cashier.name]
+        )
+        if (results.rows.length > 0) {
+            throw new CashierFoundException();
+        } else {
+            cashier.#currentCart = new Cart(cashier);
+
+            await Cashier.saveCashier(cashier); //save the cashier to db
+            await Cart.saveCart(cashier.#currentCart!); //assign an id to the new cart
+            await Cashier.updateCashiersCart(cashier, cashier.#currentCart!) //save cashier's cart to db
+        }
+        return cashier;
     }
 
     /**
@@ -79,34 +92,8 @@ export default class Cashier {
         this.#currentCart = cart;
     }
 
-    //! this method must always be called when cashier has a current cart
-    
-    //! otherwise, we can make current cart non-nullable
-    //! and check the database for a cart belonging to this cashier
-    //! when reconstructing the cashier objects and until then
-    //! pass around the cashier name and password, that was entered, as strings
-    public get currentCart(): Cart {
-        return this.#currentCart!;
-    }
-
-
-    /**
-     * The function `generateReceipt` creates a new receipt object based on the current cart and
-     * timestamp.
-     * @returns A new `Receipt` object for the current cart.
-     */
-    public generateReceipt(): Receipt {
-
-        //we can enforce that currentCart is not-null because
-        //  currentCart itself calls the generateReceipt method
-        assert(this.#currentCart, "Cashier's current cart can not be undefined when we generate a receipt.")
-
-        if (this.#currentCart!.isEmpty()) {
-            throw new InvalidCheckoutException();
-        }
-        //create a new receipt object and return it
-        return new Receipt(this.#currentCart!, this, Temporal.Now.instant());
-
+    public get currentCart(): Cart | undefined {
+        return this.#currentCart;
     }
 
     /**
@@ -121,5 +108,6 @@ export default class Cashier {
 
 export class InvalidNameException extends Error {}
 export class InvalidPasswordException extends Error {}
+export class CashierFoundException extends Error {}
 export class CashierNotFoundException extends Error {}
 export class PasswordMismatchException extends Error {}

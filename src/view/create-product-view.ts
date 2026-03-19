@@ -1,4 +1,5 @@
 import CartController from "../controller/cart-controller.ts";
+import Product from "../model/Product/product.ts";
 
 /**
  * The `CreateProductView` class in TypeScript creates a dialog for selecting and adding fruit or
@@ -9,7 +10,7 @@ export default class CreateProductView {
     #controller: CartController;
     #dialog: HTMLDialogElement;
 
-    constructor(controller: CartController, productPriceRegistry: Map<string, number>, productTypes: Array<string>) {
+    constructor(controller: CartController, productList: Array<Product>) {
         this.#controller = controller;
 
         //create dialog element to hold the product creation form
@@ -20,7 +21,7 @@ export default class CreateProductView {
         document.body.appendChild(this.#dialog);
 
         //select product type first, then proceed to price input and submission
-        this.#selectProductType(productPriceRegistry, productTypes);
+        this.#selectProductType(productList);
         
         //we use showModal() here to prevent any user interaction with the other buttons on screen
         this.#dialog.showModal();
@@ -30,7 +31,7 @@ export default class CreateProductView {
      * The function `selectProductType` displays a dialog for selecting between fruit and vegetable
      * products, then based on the user's selection, adds a product to cart.
      */
-    #selectProductType(productPriceRegistry: Map<string, number>, productTypes: Array<string>): void {
+    #selectProductType(productList: Array<Product>): void {
 
         //no preconditions or postconditions for this function, 
         // as it simply sets up the initial product type selection dialog
@@ -39,31 +40,27 @@ export default class CreateProductView {
         //  not sure if this is good practice though
         this.#dialog.innerHTML = `
             <h3>Select Product Type</h3>
-            ${this.#getProductButtons(productPriceRegistry)}
+            ${this.#getProductButtons(productList)}
         `;
 
-        this.#linkButtons(productTypes);
+        this.#linkButtons(productList);
     }
 
-    //! is this okay? safe? relies heavily on the factory
-    //! problem: without these methods, we would have to manually repeat 
-    //! these code chunks which does not comply with ocp
-
-    #getProductButtons(registry: Map<string, number>): string {
+    #getProductButtons(productList: Array<Product>): string {
         let buttonsHTML = "";
-        for (let type of registry.keys()) {
-            buttonsHTML += `<button id="${type}-btn">${type} CAD ${registry.get(type)}</button><br/><br/>`;
+        for(let product of productList) {
+            buttonsHTML += `<button id="product-${productList.indexOf(product)+1}-btn">${product.constructor.name} CAD ${product.price}</button><br/><br/>`;
         }
         return buttonsHTML;
     }
 
-    #linkButtons(product_types: Array<string>) {
-        for (let type of product_types) {
-            this.#dialog.querySelector(`#${type}-btn`)!
+    #linkButtons(productList: Array<Product>) {
+        for (let product of productList) {
+            this.#dialog.querySelector(`#product-${productList.indexOf(product)+1}-btn`)!
             .addEventListener(
                 "click",
                 () => {
-                    this.#controller.addProductToCart(type);
+                    this.#controller.addProductToCart(product.clone());
 
                     //after adding the product to cart, close this popup
                     this.#dialog.close();

@@ -48,14 +48,9 @@ export default class CartView {
         document.querySelector("#add-product")!
             .addEventListener(
                 "click",
-                () => { this.#cartController.showCreateProductView(); }
+                () => this.#cartController.showCreateProductView()
             );
-
-        //! is this okay, looks like patchwork
-        //! problem: without this, the cart items don't show up on the page after a refresh
-        if (!cart.isEmpty()) {
-            this.notify();
-        }
+        this.notify();
     }
 
     /**

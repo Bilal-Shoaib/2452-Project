@@ -1,58 +1,47 @@
 import { assert } from '../assertions.ts';
 
 import Cart from '../model/cart.ts';
+import Cashier from '../model/cashier.ts';
 import Product from '../model/Product/product.ts';
 
-//! is this okay just to register these classes?
-//!problem: without this, the fruit and vegetable classes are imported nowhere,
-//!  so the classes cannot register themselves to the factory
-import Fruit  from "../model/Product/fruit.ts";
-import Vegetable from "../model/Product/vegetable.ts";
-
 import Receipt from '../model/receipt.ts';
-import ProductFactory from '../model/Product/factory.ts';
 
 import CartView from '../view/cart-view.ts';
 import CreateProductView from '../view/create-product-view.ts';
 import ReceiptView from '../view/receipt-view.ts';
+import type CashierController from './cashier-controller.ts';
 
 /**
  * The `CartController` class manages a shopping cart, allows adding products, displaying a receipt,
  * creating new products, and resetting the cart state.
  */
 export default class CartController {
+
+    #productList: Array<Product>;
+
     #cart?: Cart;
     #cartView?: CartView;
     #receiptView?: ReceiptView;
     #createProductView?: CreateProductView;
 
 
-    constructor() {
-
+    constructor(productList: Array<Product>) {
+        this.#productList = productList;
     }
 
-    public addProductToCart(type: string): void {
-
-        const product = ProductFactory.create(type);
-
-        //each product class must register itself to the productfactory
-        assert(
-            product instanceof Product && product instanceof ProductFactory.getCreator(type),
-            `Product type ${type} must be registered with the ProductFactory`
-        );
-
-        //a valid product has been created, so we can add it to cart
-
+    public addProductToCart(product: Product): void {
         //at this point, we can assert that the cart is not empty
         //  this is because the only point where this method is called is after cart-view is initialized
         //  which means we have also set this.#cart :)
+        assert(this.#cart != undefined, "Cart can not be undefined when we try to add a product.");
+        
         this.#cart!.addItem(product);
-
         //no post-conditions needed if the precondition is satisfied
+
     }
 
     public showCart(cart: Cart): void {
-        this.#cart = cart; 
+        this.#cart = cart;
         this.#cartView = new CartView(cart, this);
         this.#receiptView = new ReceiptView(this);
     }
@@ -64,7 +53,7 @@ export default class CartController {
 
         //this method does not have any preconditions to check, it simply generates a view to create a new product
 
-        this.#createProductView = new CreateProductView(this, ProductFactory.prices, ProductFactory.types);
+        this.#createProductView = new CreateProductView(this, this.#productList);
 
         //no postconditions to check as well
     }
@@ -90,7 +79,7 @@ export default class CartController {
     /**
      * The `reset` function resets the `Cart`, `CartView`, and `ReceiptView` properties to their initial states.
      */
-    public reset(): void {
+    public async reset() {
 
         //there are no preconditions to check for this method, it simply resets the properties
         //perhaps we could use DIP and inject these new instances but this was 
@@ -103,12 +92,15 @@ export default class CartController {
         assert(this.#cart != undefined, "Cart cannot be undefined when we reset the cart-controller.")
 
         this.#cart = new Cart(this.#cart!.cashier);
-
-        //!is this fine here in cart controller? looks bad/patchwork
-        //! maybe its the responsibility of the cashier controller somehow?
+        await Cart.saveCart(this.#cart);
         this.#cart.cashier.currentCart = this.#cart;
 
-        this.#cartView = new CartView(this.#cart!, this);
+        console.log("1. cart-controller.reset: before updateCashiersCart().")
+        console.log([this.#cart.cashier, this.#cart])
+        
+        await Cashier.updateCashiersCart(this.#cart.cashier, this.#cart);
+
+        this.#cartView = new CartView(this.#cart, this);
         this.#receiptView = new ReceiptView(this);
     }
 }

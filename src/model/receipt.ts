@@ -4,6 +4,7 @@ import { assert } from "../assertions";
 
 import type Cart from "./cart";
 import type Cashier from "./cashier";
+import { InvalidCheckoutException } from "./cart";
 
 /** 
  * The `Receipt` class in TypeScript provides methods to summarize items based on type and calculate 
@@ -15,6 +16,11 @@ export default class Receipt {
     readonly timestamp: Temporal.Instant;
 
     constructor(cart: Cart, cashier: Cashier, timestamp: Temporal.Instant) {
+        
+        if (cart.isEmpty()) {
+            throw new InvalidCheckoutException();
+        }
+
         this.cart = cart;
         this.cashier = cashier;
         this.timestamp = timestamp;

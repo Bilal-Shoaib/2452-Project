@@ -1,11 +1,11 @@
 import { assert } from "../assertions";
 import Cashier from "../model/cashier";
-import Cart from "../model/cart";
 import Product from "../model/Product/product";
 import Receipt from "../model/receipt";
 import CreateCashierView from "../view/create-cashier-view";
 import LoginCashierView from "../view/login-cashier-view";
 import type CartController from "./cart-controller";
+import Cart from "../model/cart";
 
 
 export default class CashierController {
@@ -31,9 +31,6 @@ export default class CashierController {
 
         assert(!this.#cashier, "The cashier must not be defined when we set a new cashier.")
 
-        //! is this okay? looks like we don't do enough validation here
-        //! maybe we should check that cashier has a cart?
-        //! maybe check that the cashier is in the db?
         this.#cashier = cashier;
         
         await Cashier.saveCashier(this.#cashier);
@@ -55,8 +52,9 @@ export default class CashierController {
         //no other preconditions to check, the product is valid and can be added to the cart
 
         assert(this.#cashier, "The cashier can not be undefined when we add product to cart.")
+        assert(this.#cashier.currentCart, "The cashier's current cart can not be undefined when we add product to cart.")
 
-        this.#cashier!.currentCart.addItem(product);
+        this.#cashier!.currentCart!.addItem(product);
 
         //no postconditions to check, the 'non-null' product will be added to the cart
     }
@@ -71,9 +69,10 @@ export default class CashierController {
         // we throw an exception in that case to let the view know. The exception is thrown from cart.
         //no postconditions to check, if the cart is empty, the method simply alerts the receipt view
 
-        assert(this.#cashier, "The cashier can not be undefined when we checkout.")
+        assert(this.#cashier != undefined, "The cashier can not be undefined when we checkout.")
+        assert(this.#cashier.currentCart != undefined, "The cashier's current cart can not be undefined when we checkout.")
 
-        return this.#cashier!.currentCart.checkout();
+        return this.#cashier!.currentCart!.checkout();
     }
 
 }

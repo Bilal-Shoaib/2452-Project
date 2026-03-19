@@ -12,13 +12,11 @@ import type CartController from "../controller/cart-controller.ts";
  * I might modify this in the future to allow users to leave the checkout process without completion.
  */
 export default class ReceiptView {
-    #controller: CartController;
+    #cartController: CartController;
     #itemsSummary: HTMLUListElement;
     
-    constructor(controller: CartController
-
-    ) {
-        this.#controller = controller;
+    constructor(cartController: CartController) {
+        this.#cartController = cartController;
 
         //precondition: check the existence of the #receipt-container div in the #app div
 
@@ -41,13 +39,13 @@ export default class ReceiptView {
         `;        
 
         //add event listener to the "Proceed to Checkout" button that will call the
-        //  checkout() method in the cart controller when clicked
+        //  checkout() method in the cart cartController when clicked
         document.querySelector("#checkout")!
             .addEventListener(
                 "click",
                 () => { 
                     try {
-                        this.#generateReceiptPopUp(this.#controller.checkout());
+                        this.#generateReceiptPopUp(this.#cartController.checkout());
                     } catch (e: any) {
                         if (e instanceof InvalidCheckoutException) {
                             this.#generateErrorPopup();
@@ -81,7 +79,7 @@ export default class ReceiptView {
         confirmBtn.textContent = "OK";
         confirmBtn.addEventListener(
             "click",
-            () => popup.remove() //no need to reset the controller since the cart was already empty
+            () => popup.remove() //no need to reset the cartController since the cart was already empty
         );
         popup.appendChild(confirmBtn);
 
@@ -152,8 +150,8 @@ export default class ReceiptView {
             () => {
             //remove popup
             popup.remove();
-            //notify controller to reset cart or perform checkout finalization
-            this.#controller.reset();
+            //notify cartController to reset cart or perform checkout finalization
+            this.#cartController.reset();
         });
         popup.appendChild(completeBtn);
 

@@ -4,6 +4,7 @@ import type Cashier from "./cashier";
 import type Listener from "./listener";
 
 import db from './connection.ts';
+import { Temporal } from "@js-temporal/polyfill";
 
 /**
  * The `Cart` class represents a shopping cart that can hold products 
@@ -30,7 +31,7 @@ export default class Cart {
 
         if (!cart.#id) {
             let results = await db().query<{ id: number }>(
-                "insert into cart(id, cashier_name) values(default, $1) returning id",
+                "insert into cart(id, cashier_name) values(default, $1) on conflict do nothing returning id",
                 [cart.cashier.name]
             );
 
@@ -47,25 +48,11 @@ export default class Cart {
         return cart;
     }
 
-    static async getCashiersCart(cashier: Cashier): Promise<Cart> {
+    static async getCashiersCart(cashier: Cashier, cartID: number): Promise<Cart> {
 
         let cart = new Cart(cashier);
-        //cart stores a cashier's name as id,
-        //we want to find that cart
-        const results = await db().query<{ id: number }>(
-            "select id from cart where cashier_name = $1",
-            [cashier.name]
-        );
-
-        //if there is such a cart, we will fill it up
-        if (results.rows.length > 0) {
-            cart.#id = results.rows[0].id;
-            await Product.getProducts(cart);
-
-        //otherwise, we will create a new empty cart
-        } else {
-            throw new NoCartForCashierException();
-        }
+        cart.id = cartID;
+        await Product.getProducts(cart);
 
         return cart;
     }
@@ -88,13 +75,8 @@ export default class Cart {
     public checkout(): Receipt {
         //no need to check if the products array is null,
         // it is initialized in the constructor and cannot be null
-
-        //this cart must be in the database to be checked out
-        if (this.#id == undefined) {
-            throw new CartNotPersistedException();
-        }
         
-        return this.cashier.generateReceipt();
+        return new Receipt(this, this.cashier, Temporal.Now.instant());
     }
 
     /**
@@ -182,4 +164,3 @@ export default class Cart {
 
 export class InvalidCheckoutException extends Error {}
 export class CartNotPersistedException extends Error {}
-export class NoCartForCashierException extends Error {}
