@@ -68,7 +68,13 @@ export default class CartView {
         //add all items again
         for (const product of this.#cart) {
             const li = document.createElement("li");
-            li.innerHTML = `<strong>${product.constructor.name}: CAD ${product.price}</strong>`;
+            let detail = ``;
+
+            if ("quantity" in product) {
+                detail += `${product.quantity} mg`;
+            }
+            
+            li.innerHTML = `<strong>${product.constructor.name} (${detail}): CAD ${product.price}</strong>`;
             this.#itemsEL.appendChild(li);
         }
 

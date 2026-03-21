@@ -6,9 +6,56 @@ date: Winter 2026
 
 # Flows of interaction
 
-## 1. Add Items
+## 1. Log-in
 
-Show product details and add it to a cart for a customer.
+Enter cashier credentials and log-in.
+```mermaid
+flowchart
+  subgraph **Login Flow**
+    loginScreen[[Login Screen]]
+    enterCredentials{Enter Cashier Credentials}
+    verifyLogin{Verify Credentials}
+    cashierView[[Cashier Screen]]
+    addCashierPopup[Add New Cashier Popup]
+
+    loginScreen -.'Add New Cashier' <br> Button is clicked.-> addCashierPopup
+    addCashierPopup ==log-in successful <br> input: cashier==> cashierView
+
+    loginScreen -.'Log in' <br> Button is clicked.-> enterCredentials
+    enterCredentials ==input: Name & Password==> verifyLogin
+
+    verifyLogin -.error: invalid name <br> re-enter credentials.-> enterCredentials
+    verifyLogin -.error: invalid password <br> re-enter credentials.-> enterCredentials
+    verifyLogin -.error: cashier credentials not found <br> re-enter credentials.-> enterCredentials
+
+    verifyLogin ==log-in successful <br> input: cashier==> cashierView
+  end
+```
+
+## 2. Add New Cashier
+
+Enter credentials for a new cashier and log-in.
+```mermaid
+flowchart
+  subgraph **Add New Cashier**
+    addCashierPopup[Add New Cashier]
+    enterCredentials{Enter Cashier Credentials}
+    verifyCashier{Verify New Cashier}
+    cashierScreen[[Cashier Screen]]
+
+    addCashierPopup -.'Enter credentials into input fields'.-> enterCredentials
+
+    enterCredentials =='Add Cashier'<br> Button is clicked <br> input: Name & Password'==> verifyCashier
+
+    verifyCashier -.error: cashier name already exists.-> enterCredentials
+
+    verifyCashier ==login successful <br> input: Cashier==> cashierScreen
+  end
+```
+
+## 3. Add Items to Cart
+
+Enter product details and add it to cart for a cashier.
 
 ```mermaid
 flowchart
@@ -24,7 +71,7 @@ flowchart
   end
 ```
 
-## 2. Check Out
+## 4. Check Out
 
 Check out and create a receipt summarizing the items purchased and their total cost.
 
@@ -40,14 +87,28 @@ flowchart
     receipt-.'Complete Checkout' Button is clicked.->cashierScreen
   end
 ```
-Some more information about these flow of interactions:
+
+## 5. Show Receipt
+Show an interactable receipt before order confirmation.
+
+```mermaid
+flowchart
+  subgraph **Complete Checkout**
+    receipt[[Show Receipt]]
+    applyCoupon{Apply Coupon}
+    cashierScreen[[Cashier Screen]]
+
+    receipt -.'Apply Coupon'<br>Button is clicked.-> applyCoupon
+    applyCoupon ==coupon applied:<br>updated receipt==> receipt
+
+    receipt -.'Complete Checkout' Button is clicked.-> cashierScreen
+  end
+```
+
+Comments for Phase-2 Design:
+
 1. A Cashier Screen is the main screen shown during the order building process (before check out but also not idle). It will show the cart so far (list of items scanned) and also an option to check out. In reality, we might also have the option to remove items from cart, but that is not described by the project description.
 2. Viewing a product and adding it to cart has no error path. Once an item is scanned, it's details will be shown and it will be added to cart directly. There is no decision making/branching logic. We assume an infinite cart, it can never be fully filled.
 3. Typically the check out behaviour is not defined for an empty cart, this is just a convention I have opted for.
-4. Usually, some payment is required before completing check out and generating the receipt, but since the project description does not describe any payment processing/methods, we will stick to MVP.
-5. Note that we always start at the Cashier Screen and no matter what task is performed, once completed, we return back to the Cashier Screen.
-
-Changelog:
-1. Updated the flow of interaction for Adding a product to cart. Main change was the 'Enter Product Detail' subtask which is responsible for creating the product.
-2. Checkout Flow of Interaction is the same since the only 'change' comes after a checkout is completed. We reset the internal state of the app to the initial one so the cycle can be repeated from the 'Cashier Screen'.
-3. We will only have a 'Confirm Checkout' button on the receipt pop up. I might add an option to cancel/go back in the future.
+4. After log-in, we always start at the Cashier Screen and no matter what task is performed, once completed, we return back to the Cashier Screen.
+5. Note that the Log-in screen is the main screen shown whenever the website is loaded/refreshed.

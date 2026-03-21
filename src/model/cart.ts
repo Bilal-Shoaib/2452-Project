@@ -14,55 +14,14 @@ import { Temporal } from "@js-temporal/polyfill";
  * The class also implements a custom iterator to allow iteration over the products in the cart.
  */
 export default class Cart {
-    readonly cashier: Cashier;
-    #id?: number;
+    id?: number;
 
     #products: Array<Product>;
     #listeners: Array<Listener>;
 
-    constructor(cashier: Cashier) {
-        this.cashier = cashier;
-
+    constructor() {
         this.#products = new Array<Product>();
         this.#listeners = new Array<Listener>();
-    }
-
-    static async saveCart(cart: Cart): Promise<Cart> {
-
-        if (!cart.#id) {
-            let results = await db().query<{ id: number }>(
-                "insert into cart(id, cashier_name) values(default, $1) on conflict do nothing returning id",
-                [cart.cashier.name]
-            );
-
-            cart.#id = results.rows[0].id;
-        }
-
-        //we can guarantee that by the time we get here, cart will have an id for sure :)
-        for (let product of cart) {
-            if (!product.id) {
-                Product.saveProduct(product, cart.#id);
-            }
-        }
-        
-        return cart;
-    }
-
-    static async getCashiersCart(cashier: Cashier, cartID: number): Promise<Cart> {
-
-        let cart = new Cart(cashier);
-        cart.id = cartID;
-        await Product.getProducts(cart);
-
-        return cart;
-    }
-
-    public get id(): number | undefined {
-        return this.#id;
-    }
-
-    public set id(id: number) {
-        this.#id = id;
     }
 
     /**
@@ -72,11 +31,11 @@ export default class Cart {
      * @throws {InvalidCheckoutException} if the cart is empty since checkout
      *      behaviour for an empty cart is undefined.
      */
-    public checkout(): Receipt {
+    public checkout(cashier: Cashier): Receipt {
         //no need to check if the products array is null,
         // it is initialized in the constructor and cannot be null
         
-        return new Receipt(this, this.cashier, Temporal.Now.instant());
+        return new Receipt(this, cashier, Temporal.Now.instant());
     }
 
     /**
@@ -109,6 +68,18 @@ export default class Cart {
         return this.#products.includes(item);
     }
 
+    public getProductWithID(id: number): Product | undefined {
+        let product = undefined;
+        
+        for(let p of this.#products) {
+            if (p.id == id) {
+                product = p;
+            }
+        }
+
+        return product;
+    }
+
     /**
      * The `isEmpty` function in TypeScript checks if the `products` array is empty and returns a
      * boolean value.
@@ -125,7 +96,7 @@ export default class Cart {
 
     /**
      * The function `registerListener` adds a listener to an array of listeners.
-     * @param {Listener} listener -  is being added to the list of listeners.
+     * @param {Listener} listener - is being added to the list of listeners.
      */
     public registerListener(listener: Listener): void {
 
@@ -160,7 +131,27 @@ export default class Cart {
             yield product;
         }
     }
+
+    static async saveCart(cart: Cart): Promise<Cart> {
+
+        if (!cart.id) {
+            const results = await db().query<{id: number}>(
+                "insert into cart(id) values(default) on conflict do nothing returning id"
+            );
+
+            cart.id = results.rows[0].id;
+        }
+
+        //we can guarantee that by the time we get here, cart will have an id for sure :)
+        for (let product of cart) {
+            if (!product.id) {
+                await Product.saveProduct(product, cart.id);
+            }
+        }
+        
+        return cart;
+    }
+    
 }
 
 export class InvalidCheckoutException extends Error {}
-export class CartNotPersistedException extends Error {}

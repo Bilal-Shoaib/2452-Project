@@ -1,7 +1,6 @@
 import type CashierController from "../controller/cashier-controller";
 import type CartController from "../controller/cart-controller";
-import Cashier, { CashierFoundException, CashierNotFoundException, InvalidNameException, InvalidPasswordException, PasswordMismatchException } from "../model/cashier";
-import Cart from "../model/cart";
+import Cashier, { CashierFoundException, InvalidNameException, InvalidPasswordException} from "../model/cashier";
 
 export default class CreateCashierView {
     #cashierController: CashierController;
@@ -44,25 +43,21 @@ export default class CreateCashierView {
         const password = (this.#dialog.querySelector("#password-input") as HTMLInputElement).value;
 
         try {
-
-            let cashier = new Cashier(name, password);
-
             //we want to see if the cashier exists
             //  if yes, we will show an error
             //  if no, we will add a new cashier
 
             try {
-                cashier = await Cashier.newCashier(cashier);
+                const cashier = await Cashier.newCashier(name, password);
                 //if the cashier does not exist, then we can proceed
 
                 this.#cashierController.setCurrentCashier(cashier);
-                this.#cartController.showCart(cashier.currentCart!);
+                this.#cartController.showCart(cashier.cart, cashier);
                 
                 this.#dialog.close();
                 this.#dialog.remove();
 
             } catch (e: any) {
-                console.log(e)
                 if (e instanceof CashierFoundException) {
                     this.#showError("A cashier with this name already exists. Please choose another name.");    
                 }

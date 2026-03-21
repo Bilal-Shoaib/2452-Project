@@ -5,7 +5,6 @@ import Receipt from "../model/receipt";
 import CreateCashierView from "../view/create-cashier-view";
 import LoginCashierView from "../view/login-cashier-view";
 import type CartController from "./cart-controller";
-import Cart from "../model/cart";
 
 
 export default class CashierController {
@@ -52,9 +51,8 @@ export default class CashierController {
         //no other preconditions to check, the product is valid and can be added to the cart
 
         assert(this.#cashier, "The cashier can not be undefined when we add product to cart.")
-        assert(this.#cashier.currentCart, "The cashier's current cart can not be undefined when we add product to cart.")
 
-        this.#cashier!.currentCart!.addItem(product);
+        this.#cashier!.cart.addItem(product);
 
         //no postconditions to check, the 'non-null' product will be added to the cart
     }
@@ -70,9 +68,8 @@ export default class CashierController {
         //no postconditions to check, if the cart is empty, the method simply alerts the receipt view
 
         assert(this.#cashier != undefined, "The cashier can not be undefined when we checkout.")
-        assert(this.#cashier.currentCart != undefined, "The cashier's current cart can not be undefined when we checkout.")
 
-        return this.#cashier!.currentCart!.checkout();
+        return this.#cashier!.cart.checkout(this.#cashier!);
     }
 
 }

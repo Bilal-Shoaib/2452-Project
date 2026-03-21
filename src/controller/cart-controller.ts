@@ -9,7 +9,6 @@ import Receipt from '../model/receipt.ts';
 import CartView from '../view/cart-view.ts';
 import CreateProductView from '../view/create-product-view.ts';
 import ReceiptView from '../view/receipt-view.ts';
-import type CashierController from './cashier-controller.ts';
 
 /**
  * The `CartController` class manages a shopping cart, allows adding products, displaying a receipt,
@@ -34,16 +33,16 @@ export default class CartController {
         //  this is because the only point where this method is called is after cart-view is initialized
         //  which means we have also set this.#cart :)
         assert(this.#cart != undefined, "Cart can not be undefined when we try to add a product.");
-        
+
         this.#cart!.addItem(product);
         //no post-conditions needed if the precondition is satisfied
 
     }
 
-    public showCart(cart: Cart): void {
+    public showCart(cart: Cart, cashier: Cashier): void {
         this.#cart = cart;
         this.#cartView = new CartView(cart, this);
-        this.#receiptView = new ReceiptView(this);
+        this.#receiptView = new ReceiptView(this, cashier);
     }
 
     /**
@@ -62,7 +61,7 @@ export default class CartController {
      * The `checkout` function generates a receipt pop-up if the cart is not empty.
      * @throws {InvalidCheckoutException} if checkout operation is perfomed on an empty cart.
      */
-    public checkout(): Receipt {
+    public checkout(cashier: Cashier): Receipt {
 
         //precondition: the cart should not be empty, otherwise there is nothing to checkout
         // we throw an exception in that case to let the view know. The exception is thrown from cart.
@@ -73,13 +72,13 @@ export default class CartController {
         //  which means we have also set this.#cart :)
         assert(this.#cart != undefined, "Cart cannot be undefined when we checkout.")
 
-        return this.#cart!.checkout();
+        return this.#cart!.checkout(cashier);
     }
 
     /**
      * The `reset` function resets the `Cart`, `CartView`, and `ReceiptView` properties to their initial states.
      */
-    public async reset() {
+    public async reset(cashier: Cashier) {
 
         //there are no preconditions to check for this method, it simply resets the properties
         //perhaps we could use DIP and inject these new instances but this was 
@@ -91,18 +90,12 @@ export default class CartController {
 
         assert(this.#cart != undefined, "Cart cannot be undefined when we reset the cart-controller.")
 
-        this.#cart = new Cart(this.#cart!.cashier);
+        this.#cart = new Cart();
         await Cart.saveCart(this.#cart);
-        this.#cart.cashier.currentCart = this.#cart;
-
-        console.log("1. cart-controller.reset: before updateCashiersCart().")
-        console.log([this.#cart.cashier, this.#cart])
-        
-        await Cashier.updateCashiersCart(this.#cart.cashier, this.#cart);
+        cashier.cart = this.#cart;
+        await Cashier.saveCashier(cashier);
 
         this.#cartView = new CartView(this.#cart, this);
-        this.#receiptView = new ReceiptView(this);
+        this.#receiptView = new ReceiptView(this, cashier);
     }
 }
-
-export class CartNotDefinedException extends Error {}

@@ -1,6 +1,5 @@
-import ProductList from "./product-list.ts";
 import Product from "./product.ts";
-import db from "../connection.ts";
+import Factory from "./Factory/factory.ts";
 
 /**
  * The `Fruit` class in TypeScript represents a product with a 
@@ -8,25 +7,18 @@ import db from "../connection.ts";
  */
 export default class Fruit extends Product {
 
-    public static readonly type = "Fruit"; 
-    private static price = 2;
+    public static readonly type = "Fruit";
 
     constructor(price: number) {
         super(price);
     }
+    
     public clone(): Fruit {
-        return new Fruit(this.price);
+        return new Fruit(this.price.valueOf());
     }
+    
     public static async register() {
-        
-        //each subclass is responsible for inserting itself into the database
-        await db().query(
-            "insert into inventory(product_type, price) values($1, $2) on conflict do nothing",
-            [this.type, this.price]
-        )
-
-        //each subclass must also register itself to the product list
-        ProductList.add(this.type, new Fruit(this.price));
+        Factory.register(this.type, Fruit);
     }
 
 }

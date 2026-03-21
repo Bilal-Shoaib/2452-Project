@@ -55,19 +55,17 @@ export default class LoginCashierView {
         //create a dummy instance of the cashier
 
         try {
-            let cashier = new Cashier(name, password);
-
             //in case the cashier is created, check for any matches in the db
-            cashier = await Cashier.getCashier(cashier)
+            const cashier = await Cashier.getCashier(name, password)
 
             //in case the cashier is found in db, we will set the current cashier
             this.#dialog.close();
             this.#dialog.remove();
 
-            assert(cashier.currentCart, "Cashier's current cart must not be undefined after successful login.");
+            assert(cashier.cart, "Cashier's current cart must not be undefined after successful login.");
 
             this.#cashierController.setCurrentCashier(cashier);
-            this.#cartController.showCart(cashier.currentCart!);
+            this.#cartController.showCart(cashier.cart, cashier);
 
         } catch (e: any) {
             if (e instanceof InvalidNameException) {

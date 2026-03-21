@@ -1,5 +1,6 @@
 import CartController from "../controller/cart-controller.ts";
 import Product from "../model/Product/product.ts";
+import Smoothie, { InvalidSmoothieQuantityException } from "../model/Product/smoothie.ts";
 
 /**
  * The `CreateProductView` class in TypeScript creates a dialog for selecting and adding fruit or
@@ -48,7 +49,7 @@ export default class CreateProductView {
 
     #getProductButtons(productList: Array<Product>): string {
         let buttonsHTML = "";
-        for(let product of productList) {
+        for(const product of productList) {
             buttonsHTML += `<button id="product-${productList.indexOf(product)+1}-btn">${product.constructor.name} CAD ${product.price}</button><br/><br/>`;
         }
         return buttonsHTML;
@@ -59,14 +60,68 @@ export default class CreateProductView {
             this.#dialog.querySelector(`#product-${productList.indexOf(product)+1}-btn`)!
             .addEventListener(
                 "click",
-                () => {
-                    this.#controller.addProductToCart(product.clone());
+                async () => {
 
-                    //after adding the product to cart, close this popup
+                    if (product instanceof Smoothie) {
+                        product = await this.#enterSmoothieDetails(product);
+                    }
+
+                    this.#controller.addProductToCart(product.clone());
+                    
                     this.#dialog.close();
                     this.#dialog.remove();
                 }
             );
         }
     }
+
+    async #enterSmoothieDetails(smoothie: Smoothie): Promise<Product> {
+        this.#dialog.innerHTML = `
+            <span id="error" style="color:red;"></span><br/>
+            <h3>Enter Smoothie Quantity</h3>
+            <label for="quantity-input">Quantity (in mg): </label>
+            <input type="number" id="quantity-input" min="0"/>
+            <br/><br/>
+            <button id="confirm-btn" type="button">Confirm Selection</button>
+        `;
+
+        return new Promise<Product>((resolve) => {
+            this.#dialog.querySelector("#confirm-btn")!
+                .addEventListener(
+                    "click",
+                    () => {
+                        this.#verifyQuantity(smoothie);
+
+                        if (smoothie.quantity != undefined) {
+                            resolve(smoothie);
+                        }
+                    }
+                );
+        })
+    }
+
+    #verifyQuantity(smoothie: Smoothie) {
+        const quantityInput = this.#dialog.querySelector("#quantity-input") as HTMLInputElement;
+        const quantity = parseInt(quantityInput.value, 10);
+
+        try {
+            smoothie.quantity = quantity;
+    
+        } catch (e: any) {
+            if (e instanceof InvalidSmoothieQuantityException) {
+                this.#showError("Invalid smoothie quantity, please enter a non-negative integer.");
+            }
+        }
+    }
+
+    #showError(message: string) {
+        const errorEl = this.#dialog.querySelector("#error")!;
+        errorEl.textContent = message;
+
+        // Highlight the input in red
+        this.#dialog.querySelectorAll("input").forEach(input => {
+            input.setAttribute("style", "border-color: red");
+        });
+    }
+
 }
