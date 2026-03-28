@@ -1,5 +1,5 @@
 import {expect, test} from 'vitest';
-import BOGO, { DistinctProductTypeException, SameProductException } from '../src/model/Coupon/bogo';
+import BOGO, { DifferentTypeOfBOGOProductsException, SameBOGOProductsException } from '../src/model/Coupon/bogo';
 import Fruit from '../src/model/Product/fruit';
 import Vegetable from '../src/model/Product/vegetable';
 import Discount from '../src/model/Coupon/discount';
@@ -10,13 +10,13 @@ import { Temporal } from '@js-temporal/polyfill';
 
 test("Cannot create BOGO with same product", (): void => {
     const fruit = new Fruit(2);
-    expect(() => new BOGO(fruit, fruit)).toThrow(SameProductException);
+    expect(() => new BOGO(fruit, fruit)).toThrow(SameBOGOProductsException);
 });
 
 test("Cannot create BOGO with different product types", (): void => {
     const fruit = new Fruit(2);
     const vegetable = new Vegetable(3);
-    expect(() => new BOGO(fruit, vegetable)).toThrow(DistinctProductTypeException);
+    expect(() => new BOGO(fruit, vegetable)).toThrow(DifferentTypeOfBOGOProductsException);
 });
 
 test("Can create valid BOGO", (): void => {
@@ -53,7 +53,7 @@ test("Can persist and retrieve BOGO", async () => {
     const receipt = new Receipt(cart, cashier, Temporal.Now.instant());
     await Receipt.saveReceipt(receipt);
 
-    await bogo.saveCoupon(receipt.id!);
+    await bogo.saveCoupon(receipt);
     expect(bogo.id).toBeDefined();
 
     const retrievedBOGOs = await BOGO.getBOGO(receipt);
@@ -75,10 +75,10 @@ test("Can persist and retrieve Discount", async () => {
     const receipt = new Receipt(cart, cashier, Temporal.Now.instant());
     await Receipt.saveReceipt(receipt);
     
-    await discount.saveCoupon(receipt.id!);
+    await discount.saveCoupon(receipt);
     expect(discount.id).toBeDefined();
     
-    const retrievedDiscounts = await Discount.getDiscount(receipt.id!);
+    const retrievedDiscounts = await Discount.getDiscount(receipt);
     expect(retrievedDiscounts.length).equals(1);
     expect(retrievedDiscounts[0].id).equals(discount.id);
     expect(retrievedDiscounts[0].amount).equals(discount.amount);
