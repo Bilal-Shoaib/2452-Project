@@ -17,7 +17,7 @@ classDiagram
         + get price() number
         + abstract clone() Product
 
-        + static saveProduct(Product product, number cartID) Promise~Product~
+        + static saveProduct(Product product, Cart cart) Promise~Product~
         + static getProducts(Cart cart) Promise~Cart~
     }
     note for Product "Class invariants: <ul>
@@ -43,7 +43,7 @@ classDiagram
     class Coupon {
         <<interface>>
         + readonly number amount
-        + saveCoupon(number receiptID) Promise~Coupon~
+        + saveCoupon(Receipt receipt) Promise~Coupon~
     }
 
     class BOGO {
@@ -53,10 +53,10 @@ classDiagram
 
         +~? number id
 
-        + saveCoupon(number receiptID) Promise~Coupon~
+        + saveCoupon(Receipt receipt) Promise~Coupon~
 
-        + static saveBOGO(BOGO bogo, number receiptID) Promise~BOGO~
-        + static getBOGO(receipt: Receipt) Promise~Array~BOGO~~
+        + static saveBOGO(BOGO bogo, Receipt receipt) Promise~BOGO~
+        + static getBOGO(Receipt receipt) Promise~Array~BOGO~~
     }
     note for BOGO "Class invariants: <ul>
     <li> qualifier is not equal to reward
@@ -70,10 +70,10 @@ classDiagram
 
         +~? number id
 
-        + saveCoupon(number receiptID) Promise~Coupon~
+        + saveCoupon(Receipt receipt) Promise~Coupon~
 
-        + static saveDiscount(Discount discount, number receiptID) Promise~Discount~
-        + static getDiscount(receiptID: number) Promise~Array~Discount~~
+        + static saveDiscount(Discount discount, Receipt receipt) Promise~Discount~
+        + static getDiscount(Receipt receipt) Promise~Array~Discount~~
     }
     note for Discount "Class invariants: <ul>
     <li> amount is non-negative
@@ -105,16 +105,14 @@ classDiagram
         - number totalCost
         - number totalDiscount
 
-        - Array<Coupon> appliedCoupons
-        - Array<Coupon> availableCoupons
+        + readonly Array<Coupon> appliedCoupons
+        + readonly Array<Coupon> availableCoupons
         
         +~? number id
 
         + applyCoupon(Coupon coupon)
 
         + get total() number
-        + get availableCoupons() Array~Coupon~
-        + get appliedCoupons() Array~Coupon~
 
         - static getAvailableCoupons(Receipt receipt) Array~Coupon~
         - static addValidDiscounts(number totalCost, Array~Coupon~ coupons) void
