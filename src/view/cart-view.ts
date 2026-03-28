@@ -71,12 +71,12 @@ export default class CartView {
             let detail = ``;
 
             if ("quantity" in product) {
-                detail += `${product.quantity} mg`;
+                detail += `(${product.quantity} mg)`;
             }
             
-            li.innerHTML = `<strong>${product.constructor.name} (${detail}): CAD ${product.price}</strong>`;
+            li.innerHTML = `<strong>${product.constructor.name} ${detail}: CAD ${product.price}</strong>`;
             this.#itemsEL.appendChild(li);
         }
-
     }
+    
 }

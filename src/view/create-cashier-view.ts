@@ -2,6 +2,10 @@ import type CashierController from "../controller/cashier-controller";
 import type CartController from "../controller/cart-controller";
 import Cashier, { CashierFoundException, InvalidNameException, InvalidPasswordException} from "../model/cashier";
 
+/**
+ * The CreateCashierView class is responsible for rendering a dialog that allows users to create a new cashier account.
+ * It interacts with the CashierController to set the current cashier and the CartController to show the cart for the new cashier.
+ */
 export default class CreateCashierView {
     #cashierController: CashierController;
     #cartController: CartController;
@@ -19,6 +23,9 @@ export default class CreateCashierView {
         this.#dialog.showModal();
     }
 
+    /**
+     * Renders the form for creating a new cashier and sets up the event listener for the confirm button.
+     */
     #createCashier() {
         this.#dialog.innerHTML = `
         <span id="error" style="color:red;"></span><br/>
@@ -38,6 +45,11 @@ export default class CreateCashierView {
             );
     }
 
+    /**
+     * Verifies the input for creating a new cashier. It checks if the cashier already exists and if the input is valid.
+     * If the cashier is successfully created, it sets the current cashier and shows the cart for that cashier.
+     * If there are any errors, it displays appropriate error messages.
+     */
     async #verify() {
         const name = (this.#dialog.querySelector("#name-input") as HTMLInputElement).value;
         const password = (this.#dialog.querySelector("#password-input") as HTMLInputElement).value;
@@ -73,6 +85,10 @@ export default class CreateCashierView {
         }
     }
 
+    /**
+     * Displays an error message in the dialog and highlights the input fields in red.
+     * @param message The error message to display.
+     */
     #showError(message: string) {
         const errorEl = this.#dialog.querySelector("#error")!;
         errorEl.textContent = message;

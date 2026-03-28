@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for src/model/Product/fruit.ts</title>
+    <title>Code coverage report for 2452-Project/src/utils/hashing.ts</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../../prettify.css" />
     <link rel="stylesheet" href="../../../base.css" />
@@ -19,20 +19,20 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../index.html">All files</a> / <a href="index.html">src/model/Product</a> fruit.ts</h1>
+        <h1><a href="../../../index.html">All files</a> / <a href="index.html">2452-Project/src/utils</a> hashing.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>7/7</span>
+                <span class='fraction'>9/9</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>0/0</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>7/7</span>
+                <span class='fraction'>9/9</span>
             </div>
         
             
@@ -112,20 +112,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">14x</span>
-<span class="cline-any cline-yes">14x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">14x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -134,69 +126,77 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">13x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import Product from "./product.ts";
-&nbsp;
-import { InvalidPriceException } from "./product.ts";
-import { assert } from "../../assertions.ts";
-&nbsp;
-/**
- * The `Fruit` class in TypeScript represents a product with a private 
- * price property that must be non-negative.
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">256x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+ * Hashing utility for password storage using Web Crypto API.
+ * Uses PBKDF2 with SHA-256, user-specific salt, 10000 iterations, 256-bit key.
  */
-export default class Fruit extends Product {
-    #price: number;
 &nbsp;
-    constructor(price: number) {
-        super();
-        this.#price = price;
+export default async function hashPassword(password: string, salt: string): Promise&lt;string&gt; {
+  // Encode password and salt as Uint8Array
+  const enc = new TextEncoder();
+  const passwordBuffer = enc.encode(password);
+  const saltBuffer = enc.encode(salt);
 &nbsp;
-        if (this.#price &lt; 0) {
-            throw new InvalidPriceException();
-        }
+  // Import password as a CryptoKey
+  const key = await crypto.subtle.importKey(
+    "raw",               // raw format of the password
+    passwordBuffer,
+    { name: "PBKDF2" },
+    false,               // not extractable
+    ["deriveBits", "deriveKey"]
+  );
 &nbsp;
-        this.#checkFruit();
-    }
+  // Derive bits using PBKDF2
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: saltBuffer,
+      iterations: 10000,
+      hash: "SHA-256",
+    },
+    key,
+    256 // 256-bit output
+  );
 &nbsp;
-    /**
-     * This function returns the price of an item.
-     * @returns The `price` property of the object is being returned as a number.
-     */
-    get price() : number {
-&nbsp;
-        //this method is not a mutator, no preconditions or postconditions are needed
-&nbsp;
-        return this.#price;
-    }
-&nbsp;
-    /**
-     * The function `checkFruit` ensures that the price of a fruit is non-negative.
-     */
-    #checkFruit(): void {
-        assert(this.#price &gt;= 0, "Price must be non-negative.");
-    }
+  // Convert derived bits to hex string
+  return bufferToHex(derivedBits);
 }
 &nbsp;
-&nbsp;</pre></td></tr></table></pre>
+// Helper: convert ArrayBuffer to hex string
+function bufferToHex(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  return Array.from(bytes)
+    .map((b) =&gt; b.toString(16).padStart(2, "0"))
+    .join("");
+}</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-02-25T01:36:41.088Z
+                at 2026-03-28T16:47:17.520Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

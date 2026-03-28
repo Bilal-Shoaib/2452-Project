@@ -5,16 +5,15 @@ import type Listener from "./listener";
 
 import db from './connection.ts';
 import { Temporal } from "@js-temporal/polyfill";
+import { assert } from "../assertions.ts";
 
 /**
- * The `Cart` class represents a shopping cart that can hold products 
- * and notify listeners when items are added. It has private properties for 
- * storing products and listeners, and methods for adding items, checking if the cart is empty, 
- * registering listeners, and notifying all listeners when an item is added. 
- * The class also implements a custom iterator to allow iteration over the products in the cart.
+ * The `Cart` class represents a shopping cart that can hold products and allows for checkout.
+ * It has methods to add items, check if it contains a specific item, check if it's empty, 
+ * and register listeners for changes to the cart.
  */
 export default class Cart {
-    id?: number;
+    public id?: number;
 
     #products: Array<Product>;
     #listeners: Array<Listener>;
@@ -25,12 +24,12 @@ export default class Cart {
     }
 
     /**
-     * The `checkout` function throws an `InvalidCheckoutException` if the products array
-     * is empty, otherwise it returns a new `Receipt` object.
-     * @returns A new `Receipt` object.
-     * @throws {InvalidCheckoutException} if the cart is empty since checkout
-     *      behaviour for an empty cart is undefined.
+     * The `checkout` function creates a new `Receipt` object using the current `Cart`, a provided
+     * `Cashier`, and the current timestamp.
+     * @param {Cashier} cashier - The cashier who processed the checkout.
+     * @returns {Receipt} A new `Receipt` object.
      */
+
     public checkout(cashier: Cashier): Receipt {
         //no need to check if the products array is null,
         // it is initialized in the constructor and cannot be null
@@ -39,8 +38,8 @@ export default class Cart {
     }
 
     /**
-     * The addItem function adds a product to a list and notifies all observers.
-     * @param {Product} item - the product that you want to add to the list of products in the class.
+     * The `addItem` function adds a product to the cart and notifies all listeners of the change.
+     * @param {Product} item - The product to be added to the cart.
      */
     public async addItem(item: Product) {
 
@@ -68,6 +67,12 @@ export default class Cart {
         return this.#products.includes(item);
     }
 
+    /**
+     * The `getProductWithID` function searches for a product in the cart by its ID and returns it if
+     * found, otherwise it returns undefined.
+     * @param {number} id - The ID of the product to search for in the cart.
+     * @returns {Product | undefined} The product with the specified ID if found, otherwise undefined.
+     */
     public getProductWithID(id: number): Product | undefined {
         let product = undefined;
         
@@ -81,10 +86,8 @@ export default class Cart {
     }
 
     /**
-     * The `isEmpty` function in TypeScript checks if the `products` array is empty and returns a
-     * boolean value.
-     * @returns The `isEmpty` method is returning a boolean value, specifically `true` if the length of
-     * the `products` array is 0, indicating that the array is empty, and `false` otherwise.
+     * The `isEmpty` function checks if the cart is empty by verifying if the products array has a length of zero.
+     * @returns {boolean} A boolean value indicating whether the cart is empty or not.
      */
     public isEmpty(): boolean {
 
@@ -132,6 +135,12 @@ export default class Cart {
         }
     }
 
+    /**
+     * Saves the given cart to the database. Also saved all products in the cart.
+     * @param {Cart} cart - The cart to be saved to the database.
+     * @returns {Promise<Cart>} A promise that resolves to the saved cart with assigned IDs.
+     * @throws {AssertionError} If there is an error while persisting a product or the cart.
+     */
     static async saveCart(cart: Cart): Promise<Cart> {
 
         if (!cart.id) {
@@ -145,9 +154,12 @@ export default class Cart {
         //we can guarantee that by the time we get here, cart will have an id for sure :)
         for (let product of cart) {
             if (!product.id) {
-                await Product.saveProduct(product, cart.id);
+                await Product.saveProduct(product, cart);
+                assert(product.id !== undefined, "Product should have an ID after being saved to the database")
             }
         }
+
+        assert(cart.id !== undefined, "Cart should have an ID after being saved to the database");
         
         return cart;
     }

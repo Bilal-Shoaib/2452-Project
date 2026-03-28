@@ -7,6 +7,7 @@ import Product from '../model/Product/product.ts';
 import Receipt from '../model/receipt.ts';
 
 import CartView from '../view/cart-view.ts';
+import CashierView from '../view/cashier-view.ts';
 import CreateProductView from '../view/create-product-view.ts';
 import ReceiptView from '../view/receipt-view.ts';
 
@@ -19,6 +20,7 @@ export default class CartController {
     #productList: Array<Product>;
 
     #cart?: Cart;
+    #cashierView?: CashierView;
     #cartView?: CartView;
     #receiptView?: ReceiptView;
     #createProductView?: CreateProductView;
@@ -28,6 +30,11 @@ export default class CartController {
         this.#productList = productList;
     }
 
+    /**
+     * The `addProductToCart` function adds a product to the cart.
+     * @param {Product} product - The product to be added to the cart.
+     * @throws {AssertionError} if the cart is undefined when trying to add a product.
+     */
     public addProductToCart(product: Product): void {
         //at this point, we can assert that the cart is not empty
         //  this is because the only point where this method is called is after cart-view is initialized
@@ -39,8 +46,14 @@ export default class CartController {
 
     }
 
+    /**
+     * The `showCart` function initializes the `CartView` and `ReceiptView` with the provided `Cart` and `Cashier`.
+     * @param {Cart} cart - The shopping cart to be displayed.
+     * @param {Cashier} cashier - The cashier associated with the cart.
+     */
     public showCart(cart: Cart, cashier: Cashier): void {
         this.#cart = cart;
+        this.#cashierView = new CashierView(cashier);
         this.#cartView = new CartView(cart, this);
         this.#receiptView = new ReceiptView(this, cashier);
     }
@@ -58,8 +71,10 @@ export default class CartController {
     }
 
     /**
-     * The `checkout` function generates a receipt pop-up if the cart is not empty.
-     * @throws {InvalidCheckoutException} if checkout operation is perfomed on an empty cart.
+     * The `checkout` function processes the checkout of the cart using the provided cashier and returns a receipt.
+     * @param {Cashier} cashier - The cashier handling the checkout process.
+     * @return {Receipt} The receipt generated from the checkout process.
+     * @throws {AssertionError} if the cart is undefined when trying to checkout.
      */
     public checkout(cashier: Cashier): Receipt {
 
@@ -76,7 +91,10 @@ export default class CartController {
     }
 
     /**
-     * The `reset` function resets the `Cart`, `CartView`, and `ReceiptView` properties to their initial states.
+     * The `reset` function resets the cart state by creating a new cart, saving it, and updating the cashier's cart.
+     * It also reinitializes the `CartView` and `ReceiptView` with the new cart and provided cashier.
+     * @param {Cashier} cashier - The cashier whose cart is being reset.
+     * @throws {AssertionError} if the cart is undefined when trying to reset.
      */
     public async reset(cashier: Cashier) {
 

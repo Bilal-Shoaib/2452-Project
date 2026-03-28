@@ -1,4 +1,4 @@
-import Receipt from "../model/receipt";
+import Receipt, { CannotApplyCouponException } from "../model/receipt";
 
 import { InvalidCheckoutException } from "../model/cart.ts";
 import type Product from "../model/Product/product.ts";
@@ -8,10 +8,7 @@ import { assert } from "../assertions.ts";
 
 /**
  * The `ReceiptView` class is responsible for rendering the receipt interface, allowing users to view
- * the summary of items in their receipt and providing a button to proceed to checkout. Since the receipt
- * is generated once right before checkout with no option to modify it, the view does not need to 
- * listen for any changes in the receipt. 
- * I might modify this in the future to allow users to leave the checkout process without completion.
+ * the summary of items in their receipt and providing a button to proceed to checkout.
  */
 export default class ReceiptView {
     #cartController: CartController;
@@ -65,6 +62,10 @@ export default class ReceiptView {
         this.#itemsSummary.id = "receipt-summary";
     }
 
+    /**
+     * The function `generateErrorPopup` creates a popup dialog that displays an error message when the cart is empty during checkout.
+     * It includes an "OK" button to close the popup.
+     */
     #generateErrorPopup(): void {
         this.#popup.id = "error-popup";
 
@@ -104,12 +105,14 @@ export default class ReceiptView {
         let itemsHTML = this.#getCartItemsHTML();
 
         this.#popup.innerHTML = `
+            <span id="error" style="color:red;"></span><br/>
             <h3>Receipt</h3>
             <ul id="receipt-summary">
                 ${itemsHTML}
             </ul>
 
             <h4>Coupons Available</h4>
+
             <ul id="coupon-button-list"></ul>
 
             <h4>Coupons Applied</h4>
@@ -135,6 +138,10 @@ export default class ReceiptView {
         this.#popup.showModal();
     }
 
+    /**
+     * Generates a HTML string for the list of items in the cart.
+     * @returns the html string that renders the items in cart
+     */
     #getCartItemsHTML(): string {
         
         const summaryMap = this.#getSummaryMap();
@@ -156,6 +163,10 @@ export default class ReceiptView {
         return itemsHTML;
     }
 
+    /**
+     * Creates a summary map that groups products in the cart by their type and counts their quantities.
+     * @returns a Map where the key is the product type and the value is an array of products of that type.
+     */
     #getSummaryMap(): Map<string, Array<Product>> {
         const summaryMap = new Map<string, Array<Product>>();
 
@@ -172,6 +183,10 @@ export default class ReceiptView {
         return summaryMap;
     }
 
+    /**
+     * Updates the list of available coupons in the receipt popup. It clears the existing list and repopulates it with the current available coupons from the receipt.
+     * Each coupon is displayed as a button that allows the user to apply it to their receipt.
+     */
     #updateCouponButtonsList(): void {
 
         assert(this.#receipt != undefined, "Receipt view must have a valid receipt instance when creating coupon buttons.");
@@ -193,6 +208,10 @@ export default class ReceiptView {
         this.#linkButtons();
     }
 
+    /**
+     * Links the buttons for each available coupon to an event listener that applies the selected coupon to the receipt when clicked.
+     * If a coupon cannot be applied, it displays an error message to the user.
+     */
     #linkButtons(): void {
 
         assert(this.#receipt != undefined, "Receipt view must have a valid receipt instance when linking coupon buttons.");
@@ -205,13 +224,24 @@ export default class ReceiptView {
             couponButton.addEventListener(
                 "click",
                 () => {
-                    this.#receipt!.applyCoupon(coupon);
-                    couponButton.disabled = true;
+                    try {
+                        this.#popup.querySelector("#error")!.innerHTML = "";
+                        this.#receipt!.applyCoupon(coupon);
+                        couponButton.disabled = true;
+                    } catch (e: any) {
+                        if (e instanceof CannotApplyCouponException) {
+                            this.#showError("Cannot apply this coupon now. Please try to add a different coupon or complete checkout.");
+                        }
+                    }
                 }
             );
         }
     }
 
+    /**
+     * Updates the list of applied coupons in the receipt popup. It clears the existing list and repopulates it with the current applied coupons from the receipt.
+     * Each applied coupon is displayed with its name and the amount it reduces from the total.
+     */
     #updateAppliedCouponsList(): void {
         
         assert(this.#receipt != undefined, "Receipt view must have a valid receipt instance when creating applied coupons list.");
@@ -231,6 +261,9 @@ export default class ReceiptView {
 
     }
 
+    /**
+     * Updates the total price displayed in the receipt popup to reflect any changes in the receipt, such as applying coupons.
+     */
     #updateTotal(): void {
         assert(this.#receipt != undefined, "Receipt must exist to update total.");
 
@@ -238,6 +271,24 @@ export default class ReceiptView {
         totalElement.textContent = `Total: CAD ${this.#receipt!.total}`;
     }
 
+    /**
+     * Displays an error message in the receipt popup and highlights the coupon buttons in red to indicate an error.
+     * @param message The error message to display to the user.
+     */
+    #showError(message: string) {
+        const errorEl = this.#popup.querySelector("#error")!;
+        errorEl.textContent = message;
+
+        // Highlight inputs in red
+        this.#popup.querySelectorAll("input").forEach(input => {
+            input.setAttribute("style", "border-color: red");
+        });
+    }
+
+    /**
+     * The `notify` method is called to update the receipt view whenever there are changes to the receipt, such as applying coupons or updating the cart.
+     * It updates the list of available coupons, the list of applied coupons, and the total price displayed in the receipt popup.
+     */
     public notify(): void {
         this.#updateCouponButtonsList();
         this.#updateAppliedCouponsList();

@@ -92,7 +92,7 @@ classDiagram
 
         + static saveCart(Cart cart) Promise~Cart~
     }
-    note for Cart "Note: <ul>
+    note for Cart "Class invariants: <ul>
     <li> products can be empty, but never null
     </ul>"
     
@@ -123,7 +123,7 @@ classDiagram
 
         + static saveReceipt(Receipt receipt) Promise~Receipt~
     }
-    note for Receipt "Note: <ul>
+    note for Receipt "Class invariants: <ul>
     <li> cart must be non-null and non-empty
     <li> cashier is never null
     <li> timestamp is never null
@@ -142,7 +142,7 @@ classDiagram
         + static getCashier(string name, string password) Promise~Cashier~
         + static newCashier(string name, string password) Promise~Cashier~
     }
-    note for Cashier "Note: <ul>
+    note for Cashier "Class invariants: <ul>
     <li> name is never null and is non-empty
     <li> password is never null and is non-empty
     <li> cart is never null

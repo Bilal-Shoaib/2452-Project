@@ -20,7 +20,20 @@ ProductList.populate();
 // Entry point of the application
 new CashierController(new CartController(ProductList.registry));
 
-// All subclasses of Product must be registered here in main.ts
+// ALL subclasses of Product must be registered here in main.ts
+
+/** IMPORTANT: 
+ * The only other alternative to the factory method would be to have static methods
+ * in each product subclass to retreive all products of that
+ * type from the inventory table, but this would mean Product-List 
+ * would need to know about all subclasses of Product, and call those static methods to populate the registry. 
+ * This would violate OCP, as we would need to modify ProductList every time we add a new product type. 
+ * By having a register method in each product subclass, we can simply call that 
+ * method in main.ts (which is more 'accessible') without needing to modify any existing 
+ * code (elsewhere) when adding new product types.
+ * 
+ * I do want to improve this design to be more scalable. Please provide any feedback on how to improve it :)
+ */
 function registerProducts() {
     Fruit.register();
     Vegetable.register();

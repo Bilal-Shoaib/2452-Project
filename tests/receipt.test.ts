@@ -1,65 +1,96 @@
 import {expect, test} from 'vitest';
 
-import Cart from '../src/model/cart';
+import Cart, { InvalidCheckoutException } from '../src/model/cart';
 import Receipt from '../src/model/receipt';
 import Fruit from '../src/model/Product/fruit';
 import Vegetable from '../src/model/Product/vegetable';
+import Smoothie from '../src/model/Product/smoothie';
+import Cashier from '../src/model/cashier';
+import { Temporal } from '@js-temporal/polyfill';
 
-test('Receipt summarizes products correctly', () => {
+test("Receipt throws an error on an empty cart", () => {
     const cart = new Cart();
-    let fruit = new Fruit(2);
-    let vegetable = new Vegetable(3);
+    const cashier = new Cashier("a", "a", cart);
+    expect(() => new Receipt(cart, cashier, Temporal.Now.instant())).toThrow(InvalidCheckoutException);
+})
 
+test("Receipt calculates total price correctly", () => {
+    const cart = new Cart();
+    const cashier = new Cashier("a", "a", cart);
+
+    //not possible to create a receipt for an empty cart
+
+    let fruit = new Fruit(2);
     cart.addItem(fruit);
+
+    expect(new Receipt(cart, cashier, Temporal.Now.instant()).total).toBe(2);
+
+    let vegetable = new Vegetable(3);
     cart.addItem(vegetable);
 
-    const receipt = new Receipt(cart);
-
-    const summary = receipt.summarizeItems();
-
-    expect(summary.get('Fruit')).toEqual([fruit]);
-    expect(summary.get('Vegetable')).toEqual([vegetable]);
-
-    expect(summary.size).toBe(2);
-    expect(summary.get('Fruit')!.length).toBe(1);
-    expect(summary.get('Vegetable')!.length).toBe(1);
+    expect(new Receipt(cart, cashier, Temporal.Now.instant()).total).toBe(5);
 
     let anotherFruit = new Fruit(5);
     cart.addItem(anotherFruit);
-
-    expect(summary.get('Fruit')).toEqual([fruit]);
-    expect(summary.get('Vegetable')).toEqual([vegetable]);
-
-    expect(summary.size).toBe(2);
-    expect(summary.get('Fruit')!.length).toBe(1);
-    expect(summary.get('Vegetable')!.length).toBe(1);
-
-    const newSummary = receipt.summarizeItems();
-
-    expect(newSummary.get('Fruit')).toEqual([fruit, anotherFruit]);
-    expect(newSummary.get('Vegetable')).toEqual([vegetable]);
-
-    expect(newSummary.size).toBe(2);
-    expect(newSummary.get('Fruit')!.length).toBe(2);
-    expect(newSummary.get('Vegetable')!.length).toBe(1);
+    expect(new Receipt(cart, cashier, Temporal.Now.instant()).total).toBe(10);
 });
 
-test('Receipt calculates total price correctly', () => {
+test("Receipt tracks coupons correctly", async () => {
     const cart = new Cart();
+    await cart.addItem(new Fruit(10));
+    await cart.addItem(new Vegetable(10));
+    await cart.addItem(new Fruit(10));
+    await cart.addItem(new Smoothie(10));
 
-    expect(new Receipt(cart).total).toBe(0);
+    const cashier = new Cashier("a", "a", cart);
+    const receipt = new Receipt(cart, cashier, Temporal.Now.instant());
 
-    let fruit = new Fruit(2);
-    cart.addItem(fruit);
+    for (let coupon of receipt.availableCoupons) {
+        receipt.applyCoupon(coupon);
+        expect(receipt.appliedCoupons).toContain(coupon);
+        expect(receipt.availableCoupons).not.toContain(coupon);
+    }
+});
 
-    expect(new Receipt(cart).total).toBe(2);
+test("Receipt notifies all listeners when a coupon is applied", async () => {
+    const cart = new Cart();
+    await cart.addItem(new Fruit(10));
+    await cart.addItem(new Vegetable(10));
+    await cart.addItem(new Fruit(10));
+    await cart.addItem(new Smoothie(10));
 
-    let vegetable = new Vegetable(3);
-    cart.addItem(vegetable);
+    const cashier = new Cashier("a", "a", cart);
+    const receipt = new Receipt(cart, cashier, Temporal.Now.instant());
+    let notified = false;
 
-    expect(new Receipt(cart).total).toBe(5);
+    let listener = {
+        notify: () => { notified = true; }
+    };
+    receipt.registerListener(listener);
+    
+    for (let coupon of receipt.availableCoupons) {
+        receipt.applyCoupon(coupon);
+        expect(notified).toBe(true);
+        notified = false; //reset for next iteration
+    }
+});
 
-    let anotherFruit = new Fruit(5);
-    cart.addItem(anotherFruit);
-    expect(new Receipt(cart).total).toBe(10);
+test("Can persist receipt to the database", async () => {
+    const cart = new Cart();
+    await cart.addItem(new Fruit(10));
+    await cart.addItem(new Vegetable(10));
+    await cart.addItem(new Fruit(10));
+    await cart.addItem(new Smoothie(10));
+
+    const cashier = new Cashier("a", "a", cart);
+    const receipt = new Receipt(cart, cashier, Temporal.Now.instant());
+
+    for (let coupon of receipt.availableCoupons) {
+        receipt.applyCoupon(coupon);
+    }
+
+    await Cashier.saveCashier(cashier);
+    await Receipt.saveReceipt(receipt);
+
+    expect(receipt.id).toBeDefined();
 });

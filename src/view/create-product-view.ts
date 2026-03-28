@@ -47,6 +47,11 @@ export default class CreateProductView {
         this.#linkButtons(productList);
     }
 
+    /**
+     * Creates an HTML string for buttons of all available products.
+     * @param productList the list of products available to be purchased.
+     * @returns the html code to render buttons for all products.
+     */
     #getProductButtons(productList: Array<Product>): string {
         let buttonsHTML = "";
         for(const product of productList) {
@@ -55,6 +60,11 @@ export default class CreateProductView {
         return buttonsHTML;
     }
 
+    /**
+     * Links the buttons for each product to an event listener that adds the selected product to the cart.
+     * If the product is a smoothie, it prompts the user to enter additional details before adding it to the cart.
+     * @param productList the list of products available to be purchased.
+     */
     #linkButtons(productList: Array<Product>) {
         for (let product of productList) {
             this.#dialog.querySelector(`#product-${productList.indexOf(product)+1}-btn`)!
@@ -75,6 +85,12 @@ export default class CreateProductView {
         }
     }
 
+    /**
+     * Displays a dialog for entering additional details for a smoothie product, such as quantity.
+     * Validates the input and updates the smoothie product accordingly.
+     * @param smoothie the smoothie product for which details are being entered.
+     * @returns a promise that resolves to the updated smoothie product with the entered details.
+     */
     async #enterSmoothieDetails(smoothie: Smoothie): Promise<Product> {
         this.#dialog.innerHTML = `
             <span id="error" style="color:red;"></span><br/>
@@ -100,6 +116,11 @@ export default class CreateProductView {
         })
     }
 
+    /**
+     * Validates the quantity input for a smoothie product and updates the product's quantity if valid.
+     * If the input is invalid, it displays an error message.
+     * @param smoothie the smoothie product for which the quantity is being verified.
+     */
     #verifyQuantity(smoothie: Smoothie) {
         const quantityInput = this.#dialog.querySelector("#quantity-input") as HTMLInputElement;
         const quantity = parseInt(quantityInput.value, 10);
@@ -114,6 +135,10 @@ export default class CreateProductView {
         }
     }
 
+    /**
+     * Displays an error message in the dialog and highlights the input fields in red.
+     * @param message The error message to display.
+     */
     #showError(message: string) {
         const errorEl = this.#dialog.querySelector("#error")!;
         errorEl.textContent = message;
