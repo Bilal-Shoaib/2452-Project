@@ -12,24 +12,15 @@ classDiagram
         <<abstract class>>
         + readonly price number
     }
+    note for Product "Class invariants: <ul>
+    <li> price is a non-negative number
+    </ul>"
 
     class Fruit {
-        + readonly number price
-        + readonly cart Cart
     }
-    note for Fruit "Class invariants: <ul>
-    <li> price is a non-negative number
-    <li> cart is never null
-    </ul>"
     
     class Vegetable {
-        + readonly number price
-        + readonly Cart cart
     }
-    note for Vegetable "Class invariants: <ul>
-    <li> price is a non-negative number
-    <li> cart is never null
-    </ul>"
 
     class Cart {
         - readonly Array~Product~ products
@@ -100,7 +91,10 @@ Some more information about these domain objects:
 5. The receipt object does not need a summarize() method because I intend to treat the receipt class similar to a java object. It is only supposed to store a 'snapshot' of the cart once the checkout process is initialized. The receipt object itself is supposed to be the summary of cart. Receipt-View will be responsible for the exact details of how a receipt is shown on screen.
 
 Changelog:
-1. Added methods to Cart: contains, isEmpty, checkout
-2. Removed method from Cart: totalPrice
-3. Added method to Receipt: items
-4. Removed method from Receipt: summarizeItems
+1. Price for all products is now a readonly variable
+2. Receipt now has an updated invariant to check for empty carts
+3. Cart has no invariants except being non-null
+4. Product class itself is now responsible for validating and maintaining a correct price, fruit and vegetable only call super(price)
+5. Fruit and Vegetable now don't store the price constant themselves. They only extend the product class and call it's constructor :)
+
+6. Improved the tests to appropriately test the domain model given the current changes

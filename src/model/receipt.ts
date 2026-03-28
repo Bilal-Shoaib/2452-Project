@@ -7,8 +7,8 @@ import type Cashier from "./cashier";
 import { InvalidCheckoutException } from "./cart";
 
 /** 
- * The `Receipt` class in TypeScript provides methods to summarize items based on type and calculate 
- * the total price of all items in a collection. 
+ * The `Receipt` class in TypeScript provides methods to summarize cart based on type and calculate 
+ * the total price of all cart in a collection. 
  */
 export default class Receipt {
     readonly cart: Cart;
@@ -27,8 +27,8 @@ export default class Receipt {
     }
     
     /**
-     * The function calculates the total price of all items in a collection.
-     * @returns  the sum of prices of all items in the `#items` array.
+     * The function calculates the total price of all cart in a collection.
+     * @returns  the sum of prices of all cart in the `cart` array.
      */
     public get total(): number {
 

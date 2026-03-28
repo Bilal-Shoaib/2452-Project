@@ -15,10 +15,10 @@ flowchart
   subgraph **Add Item to Cart**
 
     cashierScreen[[Cashier Screen]]
-    productDetail[Enter Product Details]
+    productDetail[Select Product Type]
     addToCart{Add Product to Cart}
     
-    cashierScreen -.'Add Product to Cart' Button is clicked.-> productDetail
+    cashierScreen -.'View and Add a Product to Cart' <br> Button is clicked.-> productDetail
     productDetail ==Created Product==>addToCart
     addToCart -.Product is added to Cart.-> cashierScreen
   end

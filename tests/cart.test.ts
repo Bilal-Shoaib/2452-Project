@@ -1,8 +1,14 @@
 import {expect, test} from 'vitest';
+import { InvalidCheckoutException } from '../src/model/cart.ts';
 
 import Cart from '../src/model/cart.ts';
 import Fruit from '../src/model/Product/fruit.ts';
 import Vegetable from '../src/model/Product/vegetable.ts';
+
+test("Checkout not available for an empty cart", () => {
+    const cart = new Cart();
+    expect(() => cart.checkout()).toThrow(InvalidCheckoutException);
+})
 
 test("Can add fruit to cart", (): void => {
     let fruit = new Fruit(2);

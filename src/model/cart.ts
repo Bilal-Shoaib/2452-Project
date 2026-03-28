@@ -25,6 +25,10 @@ export default class Cart {
 
         this.#products = new Array<Product>();
         this.#listeners = new Array<Listener>();
+
+        //no need for pre-conditions in the constructor since a new cart will
+        // always have an empty list of listeners and products, does not depend on any other
+        // factors
     }
 
     static async saveCart(cart: Cart): Promise<Cart> {
