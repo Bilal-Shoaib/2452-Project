@@ -1,42 +1,13 @@
 import Product from "./product.ts";
 
-import { InvalidPriceException } from "./product.ts";
-import { assert } from "../../assertions.ts";
-
 /**
- * The `Vegetable` class in TypeScript represents a product with a private 
+ * The `Vegetable` class in TypeScript represents a product with a
  * price property that must be non-negative.
  */
 export default class Vegetable extends Product {
-    #price: number;
 
     constructor(price: number) {
-        super();
-        this.#price = price;
-        
-        if (this.#price < 0) {
-            throw new InvalidPriceException();
-        }
-
-        this.#checkVegetable();
+        super(price);
     }
 
-    
-    /**
-     * This function returns the price of an item.
-     * @returns The `price` property of the object is being returned as a number.
-     */
-    get price(): number {
-
-        //this method is not a mutator, no preconditions or postconditions are needed.
-
-        return this.#price;
-    }
-
-    /**
-     * The function `checkVegetable` ensures that the price of a vegetable is non-negative.
-     */
-    #checkVegetable(): void {
-        assert(this.#price >= 0, "Price must be non-negative.");
-    }
 }

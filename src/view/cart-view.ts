@@ -35,7 +35,7 @@ export default class CartView {
             //  so we need to make sure to replace the existing html instead of appending to it
         container.innerHTML = `
             <div id= 'cart'>
-                <button id= "add-product"> Add Product to Cart </button>
+                <button id= "add-product"> View and Add a Product to Cart </button>
                 <ul></ul>
             </div>
         `;

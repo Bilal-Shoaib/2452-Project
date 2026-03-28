@@ -1,5 +1,6 @@
-import Cart, { InvalidCheckoutException } from '../model/cart.ts';
-import Product from '../model/Product/product.ts';
+import Cart from '../model/cart.ts';
+import Fruit from '../model/Product/fruit.ts';
+import Vegetable from '../model/Product/vegetable.ts';
 import Receipt from '../model/receipt.ts';
 
 import CartView from '../view/cart-view.ts';
@@ -11,6 +12,13 @@ import ReceiptView from '../view/receipt-view.ts';
  * creating new products, and resetting the cart state.
  */
 export default class CartController {
+
+    //this is more like patch-work but for now it is alright
+    // for phase 2, this data will be retreived from the
+    // product-inventory table in the database
+    static readonly fruitPrice = 2;
+    static readonly vegetablePrice = 1;
+
     #cart: Cart;
     #cartView: CartView;
     #receiptView: ReceiptView;
@@ -22,18 +30,26 @@ export default class CartController {
         this.#receiptView = new ReceiptView(this);
     }
 
-    /**
-     * The function `addProductToCart` adds a product to the cart.
-     * @param {Product} product - Product object that represents the product being added to the cart.
-     */
-    public addProductToCart(product: Product): void {
+    public addFruitToCart() {
 
-        //no need to check if the product is null, typescript will not allow it to be null
-        //no other preconditions to check, the product is valid and can be added to the cart
+        //we assume that the fruitPrice static variable set internally will never be
+        // changed to a negative number
+        //no other pre-conditions needed for this method
 
-        this.#cart.addItem(product);
+        this.#cart.addItem(new Fruit(CartController.fruitPrice));
 
-        //no postconditions to check, the 'non-null' product will be added to the cart
+        //no post-conditions needed if the precondition is satisfied
+    }
+
+    public addVegetableToCart() {
+
+        //we assume that the vegetablePrice static variable set internally will never be
+        // changed to a negative number
+        //no other pre-conditions needed for this method
+
+        this.#cart.addItem(new Vegetable(CartController.vegetablePrice));
+
+        //no post-conditions needed if the precondition is satisfied
     }
 
     /**

@@ -1,10 +1,4 @@
-import type CartController from "../controller/cart-controller.ts";
-import Fruit from "../model/Product/fruit.ts";
-import Vegetable from "../model/Product/vegetable.ts";
-import Product from "../model/Product/product.ts";
-
-import { InvalidPriceException } from "../model/Product/product.ts";
-import { assert } from "../assertions.ts";
+import CartController from "../controller/cart-controller.ts";
 
 /**
  * The `CreateProductView` class in TypeScript creates a dialog for selecting and adding fruit or
@@ -14,9 +8,6 @@ export default class CreateProductView {
 
     #controller: CartController;
     #dialog: HTMLDialogElement;
-
-    // stores the constructor for the selected product type
-    #productConstructor: ((price: number) => Product) | null = null;
 
     constructor(controller: CartController) {
         this.#controller = controller;
@@ -37,7 +28,7 @@ export default class CreateProductView {
 
     /**
      * The function `selectProductType` displays a dialog for selecting between fruit and vegetable
-     * products, setting the product constructor accordingly based on the user's selection.
+     * products, then based on the user's selection, adds a product to cart.
      */
     #selectProductType(): void {
 
@@ -46,91 +37,35 @@ export default class CreateProductView {
 
         this.#dialog.innerHTML = `
             <h3>Select Product Type</h3>
-            <button id="fruit-btn">Fruit</button>
-            <button id="vegetable-btn">Vegetable</button>
+            <button id="fruit-btn">Fruit CAD ${CartController.fruitPrice}</button>
+            <button id="vegetable-btn">Vegetable CAD ${CartController.vegetablePrice}</button>
         `;
 
-        //if the fruit button is clicked, set the product constructor to create a Fruit and proceed to price input
+        //if the fruit button is clicked, add a fruit to cart
         this.#dialog.querySelector("#fruit-btn")!
             .addEventListener(
                 "click",
                 () => {
-                    this.#productConstructor = (price: number) => new Fruit(price);
-                    this.#getProductPrice();
+                    this.#controller.addFruitToCart();
+
+                    //after adding the product to cart, close this popup
+                    this.#dialog.close();
+                    this.#dialog.remove();
                 }
             );
 
-        //if the vegetable button is clicked, set the product constructor to create a Vegetable and proceed to get the price
+        //if the vegetable button is clicked, add a vegetable to cart
         this.#dialog.querySelector("#vegetable-btn")!
             .addEventListener(
                 "click",
                 () => {
-                    this.#productConstructor = (price: number) => new Vegetable(price);
-                    this.#getProductPrice();
+                    this.#controller.addVegetableToCart();
+
+                    //after adding the product to cart, close this popup
+                    this.#dialog.close();
+                    this.#dialog.remove();
                 }
             );
     
     }
-
-    /**
-     * The function #getProductPrice() sets up a dialog box for entering a product price and submitting
-     * it.
-     */
-    #getProductPrice(): void {
-
-        //no preconditions or postconditions for this function,
-        // as it simply sets up the price input and submission dialog
-
-        this.#dialog.innerHTML = `
-            <span id="error" style="color:red;"></span><br/>
-            <label>Enter product price</label>
-            <input type="number" id="price-input"/>
-            <button id="confirm-btn">Add Product</button>
-        `;
-
-        this.#dialog.querySelector("#confirm-btn")!
-            .addEventListener(
-                "click", 
-                () => this.#submit()
-            );
-    }
-
-    /**
-     * The function submits a product with a price input to a cart, handling exceptions for invalid prices.
-     */
-    #submit(): void {
-
-        //precondition: the product constructor must be set (i.e., a product type must have been selected)
-        //precondition: the price input must be present in the dialog
-
-        const input = this.#dialog.querySelector("#price-input") as HTMLInputElement;
-        const price = input.valueAsNumber;
-
-        try {
-            
-            //by the time we reach this point, the product constructor must be set already by the
-            // selectProductType function, so we can safely assert that it is not null
-            
-            //precondition satisfied: this.#productConstructor is not null :)
-            const product = this.#productConstructor!(price);
-
-            //postcondition: a valid product is created and added to cart
-            assert(product instanceof Product, "Created product should be an instance of Product");
-            assert(product.price >= 0, "Product price should be non-negative");
-
-            this.#controller.addProductToCart(product);
-
-            this.#dialog.close();
-            this.#dialog.remove();
-
-        } catch (e: any) {
-            if (e instanceof InvalidPriceException) {
-                this.#dialog.querySelector("input")!
-                    .setAttribute("style", "border-color: red");
-                this.#dialog.querySelector("#error")!
-                    .textContent = "Invalid product price, price must be non-negative (e.g., 10).";
-            }
-        }
-    }
-
 }
