@@ -3,9 +3,10 @@ import {expect, test} from 'vitest';
 import Product from '../src/model/Product/product.ts';
 import Fruit from '../src/model/Product/fruit.ts';
 import Vegetable from '../src/model/Product/vegetable.ts';
-import Smoothie, { InvalidSmoothieQuantityException } from '../src/model/Product/smoothie.ts';
+import Smoothie from '../src/model/Product/smoothie.ts';
 import { InvalidPriceException } from '../src/model/Product/product.ts';
 import Cart from '../src/model/cart.ts';
+import { InvalidProductQuantityException } from '../src/model/Product/product-with-quantity.ts';
 
 //no need to test if generic products can be created since they 
 // are abstract classes and cannot be instantiated directly, so we will 
@@ -30,12 +31,12 @@ test("Cannot create Vegetable with negative price", (): void => {
 });
 
 test("Can create smoothie with non-negative price", (): void => {
-    const smoothie = new Smoothie(3);
+    const smoothie = new Smoothie(3, 50);
     expect(smoothie.price >= 0).equals(true);
 });
 
 test("Cannot create smoothie with negative price", (): void => {
-    expect(() => new Smoothie(-1)).toThrow(InvalidPriceException);
+    expect(() => new Smoothie(-1, 50)).toThrow(InvalidPriceException);
 });
 
 test("Can clone Fruit", (): void => {
@@ -53,7 +54,7 @@ test("Can clone Vegetable", (): void => {
 });
 
 test("Can clone Smoothie", (): void => {
-    const smoothie = new Smoothie(4);
+    const smoothie = new Smoothie(4, 50);
     const clonedSmoothie = smoothie.clone();
     expect(clonedSmoothie.price).equals(smoothie.price);
     expect(clonedSmoothie).not.equals(smoothie);
@@ -66,15 +67,15 @@ test("Can register all products to factory", (): void => {
 });
 
 test("Can set and get quantity of Smoothie", (): void => {
-    const smoothie = new Smoothie(4);
-    expect(smoothie.quantity).toBeUndefined(); //quantity should be undefined by default
+    const smoothie = new Smoothie(4, 50);
+    expect(smoothie.quantity).equals(50);
     smoothie.quantity = 2;
     expect(smoothie.quantity).equals(2);
 });
 
 test("Cannot set negative quantity of Smoothie", (): void => {
-    const smoothie = new Smoothie(4);
-    expect(() => smoothie.quantity = -1).toThrow(InvalidSmoothieQuantityException);
+    const smoothie = new Smoothie(4, 50);
+    expect(() => smoothie.quantity = -1).toThrow(InvalidProductQuantityException);
 });
 
 test("Can persist and retrieve products from database", async () => {
@@ -83,7 +84,7 @@ test("Can persist and retrieve products from database", async () => {
 
     const fruit = new Fruit(2);
     const vegetable = new Vegetable(3);
-    const smoothie = new Smoothie(4);
+    const smoothie = new Smoothie(4, 50);
     smoothie.quantity = 2;
 
     await originalCart.addItem(fruit);
@@ -92,7 +93,7 @@ test("Can persist and retrieve products from database", async () => {
 
     const retrievedCart = new Cart();
     retrievedCart.id = originalCart.id;
-    await Product.getProducts(retrievedCart);
+    await Product.getProductsForCart(retrievedCart);
 
     for (const product of retrievedCart) {
         expect(originalCart.getProductWithID(product.id!)).not.toBeUndefined();

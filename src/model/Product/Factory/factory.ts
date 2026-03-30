@@ -1,7 +1,7 @@
 import { assert } from "../../../assertions";
 import type Product from "../product";
 
-type ProductConstructor = new (price: number) => Product;
+type ProductConstructor = new (...args: any[]) => Product;
 
 /**
  * Factory class for creating Product instances.
@@ -27,14 +27,14 @@ export default class Factory {
      * Creates an instance of a product based on the specified type and price.
      * @param type - The unique identifier for the product type to create.
      * @param price - The price to be set for the created product instance.
-     * @return A new instance of the specified product type with the given price.
+     * @return {Product} A new instance of the specified product type with the given price.
      * @throws {AssertionError} if the product type is not registered in the factory.
      */
-    public static get(type: string, price: number): Product {
+    public static get(type: string, ...args: any[]): Product {
         assert(this.registry.get(type) != undefined, `Product ${type} must be registered to the Product Factory when creating instances.`);
         
         const constructor = this.registry.get(type)!;
-        return new constructor(price).clone();
+        return new constructor(...args).clone();
     }
 
 }

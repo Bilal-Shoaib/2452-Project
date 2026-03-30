@@ -1,6 +1,6 @@
 import CartController from "../controller/cart-controller.ts";
+import ProductWithQuantity, { InvalidProductQuantityException } from "../model/Product/product-with-quantity.ts";
 import Product from "../model/Product/product.ts";
-import Smoothie, { InvalidSmoothieQuantityException } from "../model/Product/smoothie.ts";
 
 /**
  * The `CreateProductView` class in TypeScript creates a dialog for selecting and adding fruit or
@@ -72,8 +72,8 @@ export default class CreateProductView {
                 "click",
                 async () => {
 
-                    if (product instanceof Smoothie) {
-                        product = await this.#enterSmoothieDetails(product);
+                    if (product instanceof ProductWithQuantity) {
+                        product = await this.#enterQuantity(product as ProductWithQuantity);
                     }
 
                     this.#controller.addProductToCart(product.clone());
@@ -88,10 +88,10 @@ export default class CreateProductView {
     /**
      * Displays a dialog for entering additional details for a smoothie product, such as quantity.
      * Validates the input and updates the smoothie product accordingly.
-     * @param smoothie the smoothie product for which details are being entered.
-     * @returns a promise that resolves to the updated smoothie product with the entered details.
+     * @param product the product with quantity for which details are being entered.
+     * @returns a promise that resolves to the updated product with quantity with the entered details.
      */
-    async #enterSmoothieDetails(smoothie: Smoothie): Promise<Product> {
+    async #enterQuantity(product: ProductWithQuantity): Promise<Product> {
         this.#dialog.innerHTML = `
             <span id="error" style="color:red;"></span><br/>
             <h3>Enter Smoothie Quantity</h3>
@@ -106,10 +106,10 @@ export default class CreateProductView {
                 .addEventListener(
                     "click",
                     () => {
-                        this.#verifyQuantity(smoothie);
+                        this.#verifyQuantity(product);
 
-                        if (smoothie.quantity != undefined) {
-                            resolve(smoothie);
+                        if (product.quantity != undefined) {
+                            resolve(product);
                         }
                     }
                 );
@@ -119,18 +119,18 @@ export default class CreateProductView {
     /**
      * Validates the quantity input for a smoothie product and updates the product's quantity if valid.
      * If the input is invalid, it displays an error message.
-     * @param smoothie the smoothie product for which the quantity is being verified.
+     * @param product the product with quantity for which the quantity is being verified.
      */
-    #verifyQuantity(smoothie: Smoothie) {
+    #verifyQuantity(product: ProductWithQuantity) {
         const quantityInput = this.#dialog.querySelector("#quantity-input") as HTMLInputElement;
         const quantity = parseInt(quantityInput.value, 10);
 
         try {
-            smoothie.quantity = quantity;
+            product.quantity = quantity;
     
         } catch (e: any) {
-            if (e instanceof InvalidSmoothieQuantityException) {
-                this.#showError("Invalid smoothie quantity, please enter a non-negative integer.");
+            if (e instanceof InvalidProductQuantityException) {
+                this.#showError("Invalid product quantity, please enter a non-negative integer.");
             }
         }
     }

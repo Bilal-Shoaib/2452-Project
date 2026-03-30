@@ -1,56 +1,33 @@
-import Product from "./product";
+import ProductWithQuantity from "./product-with-quantity.ts";
 import Factory from "./Factory/factory";
-import { assert } from "../../assertions";
 
 /**
  * Represents a smoothie product.
- * @extends Product
+ * @extends ProductWithQuantity
  * @property {number} quantity - The quantity of the smoothie.
- * @throws {InvalidSmoothieQuantityException} If the quantity is negative.
+ * @throws {InvalidProductQuantityException} If the quantity is negative.
  */
-export default class Smoothie extends Product {
+export default class Smoothie extends ProductWithQuantity {
     
     public static readonly type = "Smoothie";
+    private static readonly MG_PER_UNIT = 100; // 100 mg per unit of smoothie
 
-    #quantity?: number;
-
-    constructor(price: number) {
-        super(price);
+    constructor(price: number, quantity: number) {
+        super(price, quantity);
     }
 
     /**
-     * Creates a clone of the current smoothie instance.
-     * @returns {Smoothie} A new instance of Smoothie with the same price and quantity.
+     * Creates a clone of the smoothie product. This method returns a new instance of the Smoothie class with the same price and quantity as the original.
+     * @returns {Smoothie} A clone of the smoothie product.
      */
     public clone(): Smoothie {
-        const copy = new Smoothie(this.price.valueOf());
-        copy.#quantity = this.#quantity;
-        return copy;
+        return new Smoothie(this.price, this.quantity);
     }
 
-    /**
-     * Sets the quantity of the smoothie.
-     * @param {number} quantity - The quantity to set. Must be a non-negative number.
-     * @throws {InvalidSmoothieQuantityException} If the quantity is negative.
-     * @throws {AssertionError} If the quantity is not a non-negative number.
-     */
-    public set quantity(quantity: number) {
-        if (quantity < 0) {
-            throw new InvalidSmoothieQuantityException();
-        }
-        this.#quantity = quantity;
-
-        assert(this.#quantity >= 0, "Quantity must be a non-negative number.");
+    public get price(): number {
+        return super.price*(this.quantity/Smoothie.MG_PER_UNIT);
     }
 
-    /**
-     * Gets the quantity of the smoothie.
-     * @returns {number | undefined} The quantity of the smoothie, or undefined if it has not been set.
-     */
-    public get quantity(): number | undefined {
-        return this.#quantity;
-    }
-    
     /**
      * Registers the Smoothie class with the Factory.
      * This method should be called to ensure that the Factory can create instances of Smoothie.

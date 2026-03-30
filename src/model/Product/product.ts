@@ -8,11 +8,11 @@ import Factory from "./Factory/factory.ts";
  * Represents a product with a price property and clonable behavior.
  * @abstract
  * @property {number} price - The price of the product, which must be non-negative.
- * @property {number} [id] - An optional ID for the product, which can be assigned after saving to the database.
+ * @property {number} id - An optional ID for the product, which can be assigned after saving to the database.
  * @abstract@method clone() - An abstract method that must be implemented by subclasses to create a clone of the product.
  */
 export default abstract class Product {
-    readonly price: number;
+    #price: number;
     public id?: number;
     
     /**
@@ -25,8 +25,12 @@ export default abstract class Product {
             throw new InvalidPriceException();
         }
         
-        this.price = price;
+        this.#price = price;
         this.#checkProduct();
+    }
+
+    public get price(): number {
+        return this.#price;
     }
 
     /**
@@ -34,7 +38,7 @@ export default abstract class Product {
      * @throws {AssertionError} if the price is negative.
      */
     #checkProduct() {
-        assert(this.price >= 0, "Product price must be non-negative.");
+        assert(this.#price >= 0, "Product price must be non-negative.");
     }
 
     /**
@@ -87,7 +91,7 @@ export default abstract class Product {
      * @returns {Promise<Cart>} A promise that resolves to the cart with the retrieved products added.
      * @throws {AssertionError} if the cart does not have an ID before retrieving products.
      */
-    public static async getProducts(cart: Cart): Promise<Cart> {
+    public static async getProductsForCart(cart: Cart): Promise<Cart> {
 
         assert(cart.id !== undefined, "Cart must have an ID to retrieve products.");
 
@@ -97,12 +101,10 @@ export default abstract class Product {
         );
 
         for (let row of results.rows) {
-            const product = Factory.get(row.product_type, row.price);
+            const args = Product.getConstructorArguments(row);
+            const product = Factory.get(row.product_type, ...args);
+
             product.id = row.id;
-            
-            if ("quantity" in product) {
-                product.quantity = row.quantity;
-            }
 
             cart.addItem(product);
         }
@@ -110,6 +112,16 @@ export default abstract class Product {
         return cart;
     }
 
+    private static getConstructorArguments(row: {id: number, price: number, product_type: string, quantity: number}): any[] {
+        const args = [];
+        args.push(row.price);
+
+        if (row.quantity != null) {
+            args.push(row.quantity);
+        }
+
+        return args;
+    }
 }
 
 export class InvalidPriceException extends Error {}

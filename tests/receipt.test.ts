@@ -40,7 +40,7 @@ test("Receipt tracks coupons correctly", async () => {
     await cart.addItem(new Fruit(10));
     await cart.addItem(new Vegetable(10));
     await cart.addItem(new Fruit(10));
-    await cart.addItem(new Smoothie(10));
+    await cart.addItem(new Smoothie(10, 50));
 
     const cashier = new Cashier("a", "a", cart);
     const receipt = new Receipt(cart, cashier, Temporal.Now.instant());
@@ -57,7 +57,7 @@ test("Receipt notifies all listeners when a coupon is applied", async () => {
     await cart.addItem(new Fruit(10));
     await cart.addItem(new Vegetable(10));
     await cart.addItem(new Fruit(10));
-    await cart.addItem(new Smoothie(10));
+    await cart.addItem(new Smoothie(10, 50));
 
     const cashier = new Cashier("a", "a", cart);
     const receipt = new Receipt(cart, cashier, Temporal.Now.instant());
@@ -107,7 +107,7 @@ test("Can persist receipt to the database", async () => {
     await cart.addItem(new Fruit(10));
     await cart.addItem(new Vegetable(10));
     await cart.addItem(new Fruit(10));
-    await cart.addItem(new Smoothie(10));
+    await cart.addItem(new Smoothie(10, 50));
 
     const cashier = new Cashier("a", "a", cart);
     const receipt = new Receipt(cart, cashier, Temporal.Now.instant());

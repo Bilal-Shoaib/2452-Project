@@ -61,7 +61,7 @@ export default class Receipt {
 
     #listeners: Array<Listener>;
     
-    id?: number;
+    public id?: number;
 
     constructor(cart: Cart, cashier: Cashier, timestamp: Temporal.Instant) {
         

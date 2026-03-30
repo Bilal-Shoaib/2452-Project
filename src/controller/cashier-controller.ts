@@ -26,7 +26,7 @@ export default class CashierController {
      */
     public async setCurrentCashier(cashier: Cashier) {
 
-        assert(this.#cashier != undefined, "The cashier must not be defined when we set a new cashier.")
+        assert(this.#cashier == undefined, "The cashier must not be defined when we set a new cashier.")
 
         this.#cashier = cashier;
         

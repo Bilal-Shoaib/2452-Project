@@ -93,7 +93,7 @@ export default class Cashier {
             }
 
             cashier.cart.id = results.rows[0].cart_id;
-            cashier.cart = await Product.getProducts(cashier.cart);
+            cashier.cart = await Product.getProductsForCart(cashier.cart);
         
         //otherwise, throw an exception that the cashier is not found
         } else {

@@ -2,6 +2,7 @@ import type Product from "../product";
 import db from "../../connection";
 import Factory from "./factory";
 import { assert } from "../../../assertions";
+import ProductWithQuantity from "../product-with-quantity";
 
 /**
  * ProductList class that maintains a registry of Product instances.
@@ -26,9 +27,32 @@ export default class ProductList {
 
             assert(constructor != undefined, `${row.product_type} must be registered with the Product Factory.`);
 
-            const product = new constructor!(row.price);
+            const args = ProductList.getConstructorArguments(row);
+            const product = new constructor!(...args);
             
             this.registry.push(product.clone());
         }
+    }
+
+    /**
+     * Gets the constructor arguments for creating a Product instance 
+     * based on the product type and price from the database row.
+     * @param row represents a row retrieved from the inventory table in the database
+     * @returns list of arguments to be passed to the product constructor
+     * @throws {AssertionError} if the product type from the database is not registered with the Product Factory.
+     */
+    private static getConstructorArguments(row: {product_type: string, price: number}): any[] {
+        const args = [];
+        args.push(row.price);
+
+        const constructor = Factory.registry.get(row.product_type);
+
+        assert(constructor != undefined, `${row.product_type} must be registered with the Product Factory.`);
+
+        if (constructor!.prototype instanceof ProductWithQuantity) {
+            args.push(0); //default quantity of 0 for products in inventory
+        }
+
+        return args;
     }
 }
