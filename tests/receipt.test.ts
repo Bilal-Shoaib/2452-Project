@@ -2,11 +2,14 @@ import {expect, test} from 'vitest';
 
 import Cart, { InvalidCheckoutException } from '../src/model/cart';
 import Receipt, { CannotApplyCouponException } from '../src/model/receipt';
+import BOGO from '../src/model/Coupon/BOGO';
+import Discount from '../src/model/Coupon/Discount';
 import Fruit from '../src/model/Product/fruit';
 import Vegetable from '../src/model/Product/vegetable';
 import Smoothie from '../src/model/Product/smoothie';
 import Cashier from '../src/model/cashier';
 import { Temporal } from '@js-temporal/polyfill';
+import Coupon from '../src/model/Coupon/coupon';
 
 test("Receipt throws an error on an empty cart", () => {
     const cart = new Cart();
@@ -44,11 +47,14 @@ test("Receipt tracks coupons correctly", async () => {
 
     const cashier = new Cashier("a", "a", cart);
     const receipt = new Receipt(cart, cashier, Temporal.Now.instant());
+    
+    const availableCoupons = new Array<Coupon>();
+    availableCoupons.push(...BOGO.getAvailableBOGOs(receipt));
+    availableCoupons.push(...Discount.getAvailableDiscounts(receipt));
 
-    for (let coupon of receipt.availableCoupons) {
+    for (let coupon of availableCoupons) {
         receipt.applyCoupon(coupon);
         expect(receipt.appliedCoupons).toContain(coupon);
-        expect(receipt.availableCoupons).not.toContain(coupon);
     }
 });
 
@@ -61,6 +67,11 @@ test("Receipt notifies all listeners when a coupon is applied", async () => {
 
     const cashier = new Cashier("a", "a", cart);
     const receipt = new Receipt(cart, cashier, Temporal.Now.instant());
+
+    const availableCoupons = new Array<Coupon>();
+    availableCoupons.push(...BOGO.getAvailableBOGOs(receipt));
+    availableCoupons.push(...Discount.getAvailableDiscounts(receipt));
+
     let notified = false;
 
     let listener = {
@@ -68,7 +79,7 @@ test("Receipt notifies all listeners when a coupon is applied", async () => {
     };
     receipt.registerListener(listener);
     
-    for (let coupon of receipt.availableCoupons) {
+    for (let coupon of availableCoupons) {
         receipt.applyCoupon(coupon);
         expect(notified).toBe(true);
         notified = false; //reset for next iteration
@@ -92,7 +103,12 @@ test("Cannot apply coupons worth more than the total cost", async () => {
 
     const cashier = new Cashier("a", "a", cart);
     const receipt = new Receipt(cart, cashier, Temporal.Now.instant());
-    for (let coupon of receipt.availableCoupons) {
+
+    const availableCoupons = new Array<Coupon>();
+    availableCoupons.push(...BOGO.getAvailableBOGOs(receipt));
+    availableCoupons.push(...Discount.getAvailableDiscounts(receipt));
+
+    for (let coupon of availableCoupons) {
         try {
             receipt.applyCoupon(coupon);
         } catch (e) {
@@ -112,7 +128,11 @@ test("Can persist receipt to the database", async () => {
     const cashier = new Cashier("a", "a", cart);
     const receipt = new Receipt(cart, cashier, Temporal.Now.instant());
 
-    for (let coupon of receipt.availableCoupons) {
+    const availableCoupons = new Array<Coupon>();
+    availableCoupons.push(...BOGO.getAvailableBOGOs(receipt));
+    availableCoupons.push(...Discount.getAvailableDiscounts(receipt));
+
+    for (let coupon of availableCoupons) {
         receipt.applyCoupon(coupon);
     }
 

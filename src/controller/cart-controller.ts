@@ -2,10 +2,11 @@ import { assert } from '../assertions.ts';
 
 import Cart from '../model/cart.ts';
 import Cashier from '../model/cashier.ts';
+import type Coupon from '../model/Coupon/coupon.ts';
+import BOGO from '../model/Coupon/bogo.ts';
+import Discount from '../model/Coupon/discount.ts';
 import Product from '../model/Product/product.ts';
-
 import Receipt from '../model/receipt.ts';
-
 import CartView from '../view/cart-view.ts';
 import CashierView from '../view/cashier-view.ts';
 import CreateProductView from '../view/create-product-view.ts';
@@ -68,6 +69,21 @@ export default class CartController {
         this.#createProductView = new CreateProductView(this, this.#productList);
 
         //no postconditions to check as well
+    }
+
+    /**
+     * The `getCouponsForReceipt` function retrieves all available coupons for a given receipt.
+     * @param {Receipt} receipt - The receipt for which to retrieve coupons.
+     * @return {Array<Coupon>} The list of available coupons.
+     */
+
+    public getCouponsForReceipt(receipt: Receipt): Array<Coupon> {
+        const coupons = new Array<Coupon>();
+
+        coupons.push(...BOGO.getAvailableBOGOs(receipt));
+        coupons.push(...Discount.getAvailableDiscounts(receipt));
+        
+        return coupons;
     }
 
     /**

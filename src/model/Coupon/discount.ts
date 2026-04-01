@@ -1,8 +1,25 @@
 import { assert } from "../../assertions.ts";
 
-import type Coupon from "./coupon.ts";
 import db from "../connection.ts";
+import type Coupon from "./coupon.ts";
 import type Receipt from "../receipt.ts";
+
+/**
+ * The DiscountThreshold class is only used within the Receipt class to represent
+ * a discount threshold amount a it's corresponding discount percantage.
+ * @property {number} cost - The minimum total cost required to qualify for the discount.
+ * @property {number} discountPercent - The percentage of the total cost that will be discounted if the threshold is met.
+ */
+class DiscountThreshold {
+
+    readonly cost: number;
+    readonly discountPercent: number;
+    
+    constructor(cost: number, discountPercent: number) {
+        this.cost = cost;
+        this.discountPercent = discountPercent;
+    }
+}
 
 /**
  * The Discount class implements the Coupon interface. 
@@ -12,6 +29,15 @@ import type Receipt from "../receipt.ts";
  * @throws {InvalidDiscountAmountException} If the amount is negative.
  */
 export default class Discount implements Coupon {
+
+    private static DISCOUNT_THRESHOLDS: DiscountThreshold[] = [
+        //multiples of 4 result in an integer when muliplied by one of the 'quarterly' percentages
+            //where we define a 'quarterly' percentage as percentages that are multiples of 25.
+        new DiscountThreshold(4, 0.25),
+        new DiscountThreshold(16, 0.50),
+        new DiscountThreshold(32, 0.75)
+    ];
+
     readonly amount: number;
     public id?: number;
 
@@ -23,6 +49,14 @@ export default class Discount implements Coupon {
         this.amount = amount;
 
         this.#checkDiscount();
+    }
+
+    /**
+     * Calculates the savings provided by this discount coupon.
+     * @returns the amount of savings that will be applied to the receipt when this coupon is used.
+     */
+    public calculateSavings(): number {
+        return this.amount;
     }
 
     /**
@@ -40,6 +74,33 @@ export default class Discount implements Coupon {
      */
     #checkDiscount() {
         assert(this.amount >= 0, "Discount amount must be non-negative");
+    }
+
+    /**
+     * The `getAvailableDiscounts` function checks if the total cost of the receipt meets any predefined discount thresholds and adds the corresponding discount coupons to the provided array.
+     * It iterates through the discount thresholds in descending order and applies the first applicable discount based on the total cost.
+     * @param {number} totalCost - The total cost of the receipt before discounts.
+     * @returns {Array<Coupon>} - The array to which valid discount coupons will be added.
+     */
+    public static getAvailableDiscounts(receipt: Receipt): Array<Discount> {
+        const discounts = new Array<Discount>();
+        
+        let discountApplied = false;
+        let i = Discount.DISCOUNT_THRESHOLDS.length-1;
+        
+        while(!discountApplied && i >= 0) {
+            const threshold = Discount.DISCOUNT_THRESHOLDS.at(i)!;
+            
+            if (receipt.totalCost >= threshold.cost) {
+                const amountDiscounted = receipt.totalCost * threshold.discountPercent;
+                discounts.push(new Discount(amountDiscounted));
+                discountApplied = true;
+            }
+            
+            i--;
+        }
+
+        return discounts;
     }
 
     /**

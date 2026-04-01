@@ -5,6 +5,7 @@ import type Product from "../model/Product/product.ts";
 import type CartController from "../controller/cart-controller.ts";
 import type Cashier from "../model/cashier.ts";
 import { assert } from "../assertions.ts";
+import type Coupon from "../model/Coupon/coupon.ts";
 
 /**
  * The `ReceiptView` class is responsible for rendering the receipt interface, allowing users to view
@@ -15,6 +16,7 @@ export default class ReceiptView {
     #popup: HTMLDialogElement;
     #itemsSummary: HTMLUListElement;
     #receipt?: Receipt;
+    #coupons?: Array<Coupon>;
     
     constructor(cartController: CartController, cashier: Cashier) {
         this.#cartController = cartController;
@@ -47,7 +49,10 @@ export default class ReceiptView {
                 "click",
                 () => { 
                     try {
-                        this.#generateReceiptPopUp(this.#cartController.checkout(cashier));
+                        this.#receipt = this.#cartController.checkout(cashier);
+                        this.#coupons = this.#cartController.getCouponsForReceipt(this.#receipt);
+
+                        this.#generateReceiptPopUp();
                     } catch (e: any) {
                         if (e instanceof InvalidCheckoutException) {
                             this.#generateErrorPopup();
@@ -90,14 +95,13 @@ export default class ReceiptView {
      * The function `generateReceiptPopUp` creates a popup displaying a receipt with item details,
      * total price, and a button to complete checkout.
      */
-    #generateReceiptPopUp(receipt: Receipt) {
+    #generateReceiptPopUp(): void {
 
         //no preconditions or postconditions since this method is only 
         // responsible for generating the receipt popup and does not 
         // modify any state or data.
 
-        receipt.registerListener(this);
-        this.#receipt = receipt;
+        this.#receipt!.registerListener(this);
         
         this.#popup.id = "receipt-popup";
 
@@ -190,18 +194,18 @@ export default class ReceiptView {
     #updateCouponButtonsList(): void {
 
         assert(this.#receipt != undefined, "Receipt view must have a valid receipt instance when creating coupon buttons.");
-        
-        const coupons = this.#receipt!.availableCoupons;
+        assert(this.#coupons != undefined, "Coupons must be defined when linking coupon buttons.");
+
         const couponButtons = this.#popup.querySelector("#coupon-button-list")! as HTMLUListElement;
         
         couponButtons.replaceChildren();
 
         couponButtons.style.listStyleType = "none";
 
-        coupons.forEach((coupon, i) => {
+        this.#coupons!.forEach((coupon, i) => {
             const li = document.createElement("li");
             li.style.marginBottom = "10px";
-            li.innerHTML = `<button id="coupon-${i + 1}-btn">Apply ${coupon.constructor.name} CAD ${coupon.amount}</button>`;
+            li.innerHTML = `<button id="coupon-${i + 1}-btn">Apply ${coupon.constructor.name} CAD ${coupon.calculateSavings()}</button>`;
             couponButtons.appendChild(li);
         });
 
@@ -215,18 +219,20 @@ export default class ReceiptView {
     #linkButtons(): void {
 
         assert(this.#receipt != undefined, "Receipt view must have a valid receipt instance when linking coupon buttons.");
+        assert(this.#coupons != undefined, "Coupons must be defined when linking coupon buttons.");
 
-        const coupons = this.#receipt!.availableCoupons;
-        
-        for (const coupon of coupons) {
-            const couponButton = this.#popup.querySelector(`#coupon-${coupons.indexOf(coupon)+1}-btn`)! as HTMLButtonElement;
+        for (const coupon of this.#coupons!) {
+            const couponButton = this.#popup.querySelector(`#coupon-${this.#coupons!.indexOf(coupon)+1}-btn`)! as HTMLButtonElement;
 
             couponButton.addEventListener(
                 "click",
                 () => {
                     try {
                         this.#popup.querySelector("#error")!.innerHTML = "";
+                        
                         this.#receipt!.applyCoupon(coupon);
+                        this.#coupons!.splice(this.#coupons!.indexOf(coupon), 1);
+                        
                         couponButton.disabled = true;
                     } catch (e: any) {
                         if (e instanceof CannotApplyCouponException) {
@@ -255,7 +261,7 @@ export default class ReceiptView {
 
         for (const coupon of coupons) {
             const li = document.createElement("li");
-            li.textContent = `${coupon.constructor.name} reduces total by CAD ${coupon.amount}`;
+            li.textContent = `${coupon.constructor.name} reduces total by CAD ${coupon.calculateSavings()}`;
             appliedCoupons.appendChild(li);
         }
 

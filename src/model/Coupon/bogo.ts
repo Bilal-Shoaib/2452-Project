@@ -1,8 +1,8 @@
 import { assert } from "../../assertions.ts";
 
+import db from "../connection.ts";
 import type Product from "../Product/product.ts";
 import type Coupon from "./coupon.ts";
-import db from "../connection.ts";
 import type Receipt from "../receipt.ts";
 
 /**
@@ -11,7 +11,6 @@ import type Receipt from "../receipt.ts";
  * @implements {Coupon}
  * @property {Product} qualifier - The product that must be purchased to qualify for the BOGO discount.
  * @property {Product} reward - The product that will be discounted if the qualifier product is purchased.
- * @property {number} amount - The amount discounted by this BOGO coupon, which is equal to the price of the reward product.
  * @throws {SameBOGOProductsException} If the qualifier and reward products are the same object.
  * @throws {DifferentTypeOfBOGOProductsException} If the qualifier and reward products do not belong to the same class.
  */
@@ -19,7 +18,6 @@ export default class BOGO implements Coupon {
 
     readonly qualifier: Product;
     readonly reward: Product;
-    readonly amount: number;
 
     public id?: number;
     constructor(qualifier: Product, reward: Product) {
@@ -35,9 +33,15 @@ export default class BOGO implements Coupon {
         this.qualifier = qualifier;
         this.reward = reward;
 
-        this.amount = reward.price;
-
         this.#checkBOGO();
+    }
+
+    /**
+     * Calculates the savings provided by this BOGO coupon.
+     * @returns the amount of savings that will be applied to the receipt when this coupon is used, which is equal to the price of the reward product.
+     */
+    public calculateSavings(): number {
+        return this.reward.price;
     }
 
     /**
@@ -60,8 +64,39 @@ export default class BOGO implements Coupon {
     #checkBOGO() {
         assert(this.qualifier != this.reward, "BOGO must be applied to distinct products.");
         assert(this.qualifier.constructor === this.reward.constructor, "Both products in BOGO must belong to the same class.");
-        assert(this.amount == this.reward.price, "The amount discounted must be the cost of the reward product.");
-        assert(this.amount > 0, "The discounted amount must be non-negative.")
+    }
+
+    /**
+     * The `getAvailableBOGOs` function checks for valid BOGO (Buy One Get One) offers based on
+     * the products in the receipt and adds the corresponding BOGO coupons to the provided array.
+     * @param {Cart} receipt - The shopping cart containing the products to check for BOGO offers.
+     * @return {Array<BOGO>} An array of BOGO coupons that are applicable to the products in the receipt.
+     */
+    public static getAvailableBOGOs(receipt: Receipt): Array<BOGO> {
+        const bogos = new Array<BOGO>();
+        //? Use a string key because JavaScript Maps compare object keys by reference,
+        //? not by value (no .equals() like Java). This ensures correct grouping.
+        const productMap = new Map<string, Array<Product>>();
+
+        for (const item of receipt.cart) {
+
+            const mapKey = `${item.constructor.name}-${item.price}`;
+            
+            if (productMap.has(mapKey)) {
+            
+                const bogoPair = productMap.get(mapKey);
+            
+                if (bogoPair!.length <= 1 && bogoPair!.at(0)!.id! != item.id!) {
+                    bogos.push(new BOGO(bogoPair!.at(0)!, item));
+                    bogoPair!.push(item);
+                }
+            
+            } else {
+                productMap.set(mapKey, [item]);
+            }
+        }
+
+        return bogos;
     }
 
     /**

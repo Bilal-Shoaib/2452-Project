@@ -10,7 +10,6 @@ import Factory from "./Factory/factory";
 export default class Smoothie extends ProductWithQuantity {
     
     public static readonly type = "Smoothie";
-    private static readonly MG_PER_UNIT = 100; // 100 mg per unit of smoothie
 
     constructor(price: number, quantity: number) {
         super(price, quantity);
@@ -22,10 +21,6 @@ export default class Smoothie extends ProductWithQuantity {
      */
     public clone(): Smoothie {
         return new Smoothie(this.price, this.quantity);
-    }
-
-    public get price(): number {
-        return super.price*(this.quantity/Smoothie.MG_PER_UNIT);
     }
 
     /**

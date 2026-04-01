@@ -2,7 +2,6 @@ import { assert } from "../assertions";
 
 import Cart from "./cart";
 import db from './connection.ts';
-import Product from "./Product/product.ts";
 import hashPassword from "../utils/hashing.ts";
 
 /**
@@ -93,7 +92,7 @@ export default class Cashier {
             }
 
             cashier.cart.id = results.rows[0].cart_id;
-            cashier.cart = await Product.getProductsForCart(cashier.cart);
+            cashier.cart = await Cart.populateCart(cashier.cart);
         
         //otherwise, throw an exception that the cashier is not found
         } else {

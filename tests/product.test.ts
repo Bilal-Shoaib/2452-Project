@@ -39,6 +39,10 @@ test("Cannot create smoothie with negative price", (): void => {
     expect(() => new Smoothie(-1, 50)).toThrow(InvalidPriceException);
 });
 
+test("Cannot create smoothie with negative quantity", (): void => {
+    expect(() => new Smoothie(3, -1)).toThrow(InvalidProductQuantityException);
+});
+
 test("Can clone Fruit", (): void => {
     const fruit = new Fruit(2);
     const clonedFruit = fruit.clone();
@@ -64,6 +68,14 @@ test("Can register all products to factory", (): void => {
     expect(() => Fruit.register()).not.toThrow();
     expect(() => Vegetable.register()).not.toThrow();
     expect(() => Smoothie.register()).not.toThrow();
+});
+
+test("Can calculate total price of Smoothie correctly", (): void => {
+    const smoothie = new Smoothie(4, 50);
+    smoothie.quantity = 100;
+    expect(smoothie.totalPrice()).equals(4);
+    smoothie.quantity = 2000;
+    expect(smoothie.totalPrice()).equals(80);
 });
 
 test("Can set and get quantity of Smoothie", (): void => {

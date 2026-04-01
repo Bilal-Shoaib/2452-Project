@@ -1,6 +1,7 @@
 import Cart from "../model/cart";
 
 import type CartController from "../controller/cart-controller.ts";
+import ProductWithQuantity from "../model/Product/product-with-quantity.ts";
 
 /**
  * The `CartView` class is responsible for rendering the shopping cart interface, allowing users to view
@@ -69,12 +70,14 @@ export default class CartView {
         for (const product of this.#cart) {
             const li = document.createElement("li");
             let detail = ``;
+            let price = product.price;
 
-            if ("quantity" in product) {
+            if (product instanceof ProductWithQuantity) {
                 detail += `(${product.quantity} mg)`;
+                price = product.totalPrice();
             }
             
-            li.innerHTML = `<strong>${product.constructor.name} ${detail}: CAD ${product.price}</strong>`;
+            li.innerHTML = `<strong>${product.constructor.name} ${detail}: CAD ${price}</strong>`;
             this.#itemsEL.appendChild(li);
         }
     }

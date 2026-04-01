@@ -9,6 +9,9 @@ import Product from "./product";
  * @throws {InvalidProductQuantityException} If the quantity is negative.
  */
 export default abstract class ProductWithQuantity extends Product {
+
+    public static readonly MG_PER_UNIT = 100; // 100 mg per unit of product with quantity
+
     #quantity: number;
 
     constructor(price: number, quantity: number) {
@@ -44,7 +47,16 @@ export default abstract class ProductWithQuantity extends Product {
     }
 
     /**
-     * Creates a clone of the product with quantity. This method must be implemented by subclasses to provide specific cloning behavior for products with quantity.
+     * Calculates the total price of the product based on its quantity.
+     * @returns {number} The total price of the product based on its quantity.
+     */
+    public totalPrice(): number {
+        return super.price*(this.quantity/ProductWithQuantity.MG_PER_UNIT);
+    }
+
+    /**
+     * Creates a clone of the product with quantity.
+     * This method must be implemented by subclasses to provide specific cloning behavior for products with quantity.
      * @abstract
      * @returns {ProductWithQuantity} A clone of the product with quantity.
      */

@@ -5,27 +5,7 @@ import type Cashier from "./cashier.ts";
 import { InvalidCheckoutException } from "./cart.ts";
 import db from "./connection.ts";
 import type Coupon from "./Coupon/coupon.ts";
-import type Product from "./Product/product.ts";
-import Discount from "./Coupon/discount.ts";
-import BOGO from "./Coupon/bogo.ts";
 import type Listener from "./listener.ts";
-
-/**
- * The DiscountThreshold class is only used within the Receipt class to represent
- * a discount threshold amount a it's corresponding discount percantage.
- * @property {number} cost - The minimum total cost required to qualify for the discount.
- * @property {number} discountPercent - The percentage of the total cost that will be discounted if the threshold is met.
- */
-class DiscountThreshold {
-
-    readonly cost: number;
-    readonly discountPercent: number;
-    
-    constructor(cost: number, discountPercent: number) {
-        this.cost = cost;
-        this.discountPercent = discountPercent;
-    }
-}
 
 /**
  * The Receipt class represents a receipt generated after a customer checks out their cart.
@@ -34,30 +14,21 @@ class DiscountThreshold {
  * @property {Cart} cart - The shopping cart associated with the receipt.
  * @property {Cashier} cashier - The cashier who processed the checkout.
  * @property {Temporal.Instant} timestamp - The timestamp of when the receipt was generated.
+ * @property {number} totalCost - The total cost of the items in the cart before any savings.
  * @property {number} total - The total cost of the items in the cart after any discounts are applied.
- * @property {Array<Coupon>} availableCoupons - An array of coupons that are available for the receipt based on the items in the cart and the total cost.
  * @property {Array<Coupon>} appliedCoupons - An array of coupons that have been applied to the receipt.
  * @throws {InvalidCheckoutException} If the cart is empty when attempting to create a receipt, as a receipt cannot be generated for an empty cart.
  */
 export default class Receipt {
-
-    private static DISCOUNT_THRESHOLDS: DiscountThreshold[] = [
-        //multiples of 4 result in an integer when muliplied by one of the 'quarterly' percentages
-            //where we define a 'quarterly' percentage as percentages that are multiples of 25.
-        new DiscountThreshold(4, 0.25),
-        new DiscountThreshold(16, 0.50),
-        new DiscountThreshold(32, 0.75)
-    ];
     
     readonly cart: Cart;
     readonly cashier: Cashier;
     readonly timestamp: Temporal.Instant;
     
-    #totalCost: number;
-    #totalDiscount: number;
+    readonly totalCost: number;
+    #totalSavings: number;
 
     readonly appliedCoupons: Array<Coupon>;
-    readonly availableCoupons: Array<Coupon>;
 
     #listeners: Array<Listener>;
     
@@ -73,11 +44,10 @@ export default class Receipt {
         this.cashier = cashier;
         this.timestamp = timestamp;
 
-        this.#totalCost = Receipt.calculateTotal(cart);
-        this.#totalDiscount = 0;
+        this.totalCost = Receipt.calculateTotal(cart);
+        this.#totalSavings = 0;
 
         this.appliedCoupons = new Array<Coupon>();
-        this.availableCoupons = Receipt.getAvailableCoupons(this);
 
         this.#listeners = new Array<Listener>();
 
@@ -94,17 +64,15 @@ export default class Receipt {
      */
     public applyCoupon(coupon: Coupon): void {
 
-        assert(this.availableCoupons.includes(coupon), "The coupon being applied must be in the list of available coupons for this receipt.");
         assert(!this.appliedCoupons.includes(coupon), "The coupon being applied cannot already be in the list of applied coupons for this receipt.");
 
-        if (this.#totalDiscount + coupon.amount > this.#totalCost) {
+        if (this.#totalSavings + coupon.calculateSavings() > this.totalCost) {
             throw new CannotApplyCouponException();
         }
 
         this.appliedCoupons.push(coupon);
-        this.availableCoupons.splice(this.availableCoupons.indexOf(coupon), 1);
 
-        this.#totalDiscount += coupon.amount;
+        this.#totalSavings += coupon.calculateSavings();
 
         this.#notifyAll();
         this.#checkReceipt();
@@ -116,7 +84,7 @@ export default class Receipt {
      * @throws {AssertionError} If the net payable amount is negative, as the total cost after applying discounts should always be a non-negative number.
      */
     public get total(): number {
-        const payableAmount = this.#totalCost - this.#totalDiscount;
+        const payableAmount = this.totalCost - this.#totalSavings;
         assert(payableAmount >= 0, "The net payable amount must be non-negative after applying discounts.");
 
         return payableAmount;
@@ -157,82 +125,9 @@ export default class Receipt {
      */
     #checkReceipt() {
         assert(!this.cart.isEmpty(), "A receipt can never store an empty cart.");
-        assert(this.#totalCost >= 0, "Total cost must be a non-negative number.");
-        assert(this.#totalDiscount >= 0, "Total discount must be a non-negative number.");
-        assert(this.#totalDiscount <= this.#totalCost, "Total discount cannot exceed total cost.");
-    }
-
-    /**
-     * The `getAvailableCoupons` function generates a list of coupons that are applicable to the receipt based on the items in the cart and the total cost.
-     * It checks for valid discounts based on predefined thresholds and valid BOGO offers based on the products in the cart.
-     * @param {Receipt} receipt - The receipt for which to calculate the available coupons.
-     * @returns {Array<Coupon>} An array of coupons that are available for the receipt.
-     */
-    private static getAvailableCoupons(receipt: Receipt): Array<Coupon> {
-        const coupons = new Array<Coupon>();
-
-        //add any applicable discount first, only one discount allowed
-        Receipt.addValidDiscounts(receipt.#totalCost, coupons);
-        
-        //now check for any eligible bogos and add them
-        Receipt.addValidBOGOs(receipt.cart, coupons);
-
-        return coupons;
-
-    }
-
-    /**
-     * The `addValidDiscounts` function checks if the total cost of the receipt meets any predefined discount thresholds and adds the corresponding discount coupons to the provided array.
-     * It iterates through the discount thresholds in descending order and applies the first applicable discount based on the total cost.
-     * @param {number} totalCost - The total cost of the receipt before discounts.
-     * @param {Array<Coupon>} coupons - The array to which valid discount coupons will be added.
-     */
-    private static addValidDiscounts(totalCost: number, coupons: Array<Coupon>): void {
-        let discountApplied = false;
-        let i = Receipt.DISCOUNT_THRESHOLDS.length-1;
-        
-        while(!discountApplied && i >= 0) {
-            const threshold = Receipt.DISCOUNT_THRESHOLDS.at(i)!;
-            
-            if (totalCost >= threshold.cost) {
-                const amountDiscounted = totalCost * threshold.discountPercent;
-                coupons.push(new Discount(amountDiscounted));
-                discountApplied = true;
-            }
-            
-            i--;
-        }
-    }
-
-    /**
-     * The `addValidBOGOs` function checks for valid BOGO (Buy One Get One) offers based on the products in the cart and adds the corresponding BOGO coupons to the provided array.
-     * It uses a map to group products by their type and price, and identifies valid BOGO pairs to create BOGO coupons.
-     * @param {Cart} cart - The shopping cart containing the products to check for BOGO offers.
-     * @param {Array<Coupon>} coupons - The array to which valid BOGO coupons will be added.
-     */
-    private static addValidBOGOs(cart: Cart, coupons: Array<Coupon>): void {
-        //? Use a string key because JavaScript Maps compare object keys by reference,
-        //? not by value (no .equals() like Java). This ensures correct grouping.
-        const productMap = new Map<string, Array<Product>>();
-
-        for (const item of cart) {
-
-            const mapKey = `${item.constructor.name}-${item.price}`;
-            
-            if (productMap.has(mapKey)) {
-            
-                const bogoPair = productMap.get(mapKey);
-            
-                if (bogoPair!.length <= 1 && bogoPair!.at(0)!.id! != item.id!) {
-                    coupons.push(new BOGO(bogoPair!.at(0)!, item));
-                    bogoPair!.push(item);
-                }
-            
-            } else {
-                productMap.set(mapKey, [item]);
-            }
-        }
-
+        assert(this.totalCost >= 0, "Total cost must be a non-negative number.");
+        assert(this.#totalSavings >= 0, "Total discount must be a non-negative number.");
+        assert(this.#totalSavings <= this.totalCost, "Total discount cannot exceed total cost.");
     }
 
     /**

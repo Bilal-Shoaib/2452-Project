@@ -163,6 +163,19 @@ export default class Cart {
         
         return cart;
     }
+
+    static async populateCart(cart: Cart): Promise<Cart> {
+
+        assert(cart.id !== undefined, "Cart must have an ID to retrieve products.");
+
+        const productsForCart = await Product.getProductsForCart(cart);
+        
+        for (const product of productsForCart) {
+            cart.addItem(product);
+        }
+        
+        return cart;
+    }
     
 }
 

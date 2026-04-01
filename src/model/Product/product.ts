@@ -91,7 +91,7 @@ export default abstract class Product {
      * @returns {Promise<Cart>} A promise that resolves to the cart with the retrieved products added.
      * @throws {AssertionError} if the cart does not have an ID before retrieving products.
      */
-    public static async getProductsForCart(cart: Cart): Promise<Cart> {
+    public static async getProductsForCart(cart: Cart): Promise<Array<Product>> {
 
         assert(cart.id !== undefined, "Cart must have an ID to retrieve products.");
 
@@ -100,24 +100,26 @@ export default abstract class Product {
             [cart.id!]
         );
 
+        const products = new Array<Product>();
+
         for (let row of results.rows) {
             const args = Product.getConstructorArguments(row);
             const product = Factory.get(row.product_type, ...args);
 
             product.id = row.id;
 
-            cart.addItem(product);
+            products.push(product);
         }
 
-        return cart;
+        return products;
     }
 
-    private static getConstructorArguments(row: {id: number, price: number, product_type: string, quantity: number}): any[] {
+    private static getConstructorArguments(databaseRow: {id: number, price: number, quantity: number}): any[] {
         const args = [];
-        args.push(row.price);
+        args.push(databaseRow.price);
 
-        if (row.quantity != null) {
-            args.push(row.quantity);
+        if (databaseRow.quantity != null) {
+            args.push(databaseRow.quantity);
         }
 
         return args;

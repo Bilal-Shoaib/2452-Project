@@ -123,3 +123,23 @@ test("Cart iterator does not return invalid products", async () => {
         expect(item).not.equals(invalidProduct);
     }
 });
+
+test("Can persist cart and retrieve it", async () => {
+    Fruit.register();
+    Vegetable.register();
+
+    const cart = new Cart();
+    const fruit = new Fruit(2);
+    const vegetable = new Vegetable(3);
+
+    await cart.addItem(fruit);
+    await cart.addItem(vegetable);
+
+    const retrievedCart = new Cart();
+    retrievedCart.id = cart.id;
+
+    await Cart.populateCart(retrievedCart);
+    for (const item of retrievedCart) {
+        expect(item).toBeOneOf([fruit, vegetable]);
+    }
+});

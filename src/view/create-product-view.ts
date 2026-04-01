@@ -55,7 +55,15 @@ export default class CreateProductView {
     #getProductButtons(productList: Array<Product>): string {
         let buttonsHTML = "";
         for(const product of productList) {
-            buttonsHTML += `<button id="product-${productList.indexOf(product)+1}-btn">${product.constructor.name} CAD ${product.price}</button><br/><br/>`;
+            let buttonHTML = `<button id="product-${productList.indexOf(product)+1}-btn">`;
+            buttonHTML += `${product.constructor.name} CAD ${product.price}`;
+            
+            if (product instanceof ProductWithQuantity) {
+                buttonHTML += ` per ${ProductWithQuantity.MG_PER_UNIT} mg`;
+            }
+            
+            buttonHTML += `</button><br/><br/>`;
+            buttonsHTML += buttonHTML;
         }
         return buttonsHTML;
     }
