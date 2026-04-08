@@ -1,8 +1,9 @@
 import { trainMarkovModel } from "./train-markov-model";
 import { persistMarkovMatrix } from "./persist-markov-model-csv";
 
+
 async function main() {
-    const inputFile = "training.csv";
+    const inputFile = "./training.csv";
     const outputFile = "../matrix.csv";
     const dimension = 10;
 
@@ -16,7 +17,7 @@ async function main() {
         }
 
     } catch (error) {
-        console.log("Error during training pipeline:", error);
+        console.log("Error during training:", error);
     }
 }
 
