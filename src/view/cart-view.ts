@@ -1,12 +1,9 @@
-import Cart from "../model/cart";
-
 import type CartController from "../controller/cart-controller.ts";
+import Cart from "../model/cart";
 import ProductWithQuantity from "../model/Product/product-with-quantity.ts";
 
 /**
- * The `CartView` class is responsible for rendering the shopping cart interface, allowing users to view
- * the products in their cart and providing a button to add more products. It listens for changes in the
- * cart and updates the display accordingly.
+ * Renders the current cart.
  */
 export default class CartView {
    #cart: Cart;
@@ -36,27 +33,31 @@ export default class CartView {
             //  so we need to make sure to replace the existing html instead of appending to it
         container.innerHTML = `
             <div id= 'cart'>
+                <button id= "auto-buy"> Auto-Buy Products </button>
                 <button id= "add-product"> Add Product to Cart </button>
                 <ul></ul>
             </div>
         `;
         
-        //store the reference to the ul element where the products in the cart will be displayed
         this.#itemsEL = document.querySelector("#cart > ul")!;
 
-        //add event listener to the "Add Product to Cart" button that will call the
-        //  showCreateProductView() method in the cart controller when clicked
         document.querySelector("#add-product")!
             .addEventListener(
                 "click",
                 () => this.#cartController.showCreateProductView()
             );
+
+        document.querySelector("#auto-buy")!
+            .addEventListener(
+                "click",
+                () => this.#cartController.showAutoBuyView()
+            );
+            
         this.notify();
     }
 
     /**
-     * The `notify` function updates the internal state of the list of products in the cart by removing
-     * all items and then adding them back with their names and prices displayed in a list format.
+     * Updates the internal state of the list of products in the cart.
      */
     public notify(): void {
         

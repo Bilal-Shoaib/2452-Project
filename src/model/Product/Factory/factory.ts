@@ -1,4 +1,5 @@
 import { assert } from "../../../assertions";
+
 import type Product from "../product";
 
 type ProductConstructor = new (...args: any[]) => Product;

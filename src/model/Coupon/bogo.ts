@@ -1,9 +1,10 @@
 import { assert } from "../../assertions.ts";
 
-import db from "../connection.ts";
 import type Product from "../Product/product.ts";
 import type Coupon from "./coupon.ts";
 import type Receipt from "../receipt.ts";
+
+import db from "../connection.ts";
 
 /**
  * The BOGO class implements the Coupon interface.

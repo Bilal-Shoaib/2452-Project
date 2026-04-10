@@ -1,8 +1,10 @@
-import type Product from "../product";
-import db from "../../connection";
-import Factory from "./factory";
 import { assert } from "../../../assertions";
+
+import type Product from "../product";
+import Factory from "./factory";
 import ProductWithQuantity from "../product-with-quantity";
+
+import db from "../../connection";
 
 /**
  * ProductList class that maintains a registry of Product instances.

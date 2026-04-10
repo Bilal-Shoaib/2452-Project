@@ -105,7 +105,24 @@ flowchart
   end
 ```
 
-Comments for Phase-2 Design:
+## 6. Auto-Buy
+Automatically buys products for the user with the given amount.
+
+```mermaid
+flowchart
+  subgraph **Auto-Buy**
+    cashierScreen[[Cashier Screen]]
+    enterAmount[Enter Auto-Buy Amount]
+    addProducts{Add Products Automatically}
+
+    cashierScreen -.'Auto-Buy Products'<br>Button is clicked.-> enterAmount
+    enterAmount ==input: Amount==>
+    addProducts ==products automatically added to cart:<br>updated cart==> cashierScreen
+
+  end
+```
+
+Comments for Design:
 
 1. A Cashier Screen is the main screen shown during the order building process (before check out but also not idle). It will show the cart so far (list of items scanned) and also an option to check out. In reality, we might also have the option to remove items from cart, but that is not described by the project description.
 2. Viewing a product and adding it to cart has no error path. Once an item is scanned, it's details will be shown and it will be added to cart directly. There is no decision making/branching logic. We assume an infinite cart, it can never be fully filled.

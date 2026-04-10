@@ -1,8 +1,7 @@
 import type Cashier from "../model/cashier";
 
 /**
- * The CashierView class is responsible for rendering the cashier interface in the application.
- * It takes a Cashier object as a parameter and displays a welcome message along with instructions for the cashier.
+ * Renders a welcome screen for the cashier.
  */
 export default class CashierView {
     #cashier: Cashier;
@@ -17,7 +16,9 @@ export default class CashierView {
         this.#dialog.innerHTML = `
             <h2>Hello, ${this.#cashier.name}!</h2>
             <p>Welcome to the cashier interface. 
-            Please use the buttons below to manage your cart and process checkout.</p>
+            Please use the buttons below to manage your cart and process checkout.
+            </br>
+            Feel free to try out our latest and greatest Auto-Buy feature :)</p>
         `;
     }
 }

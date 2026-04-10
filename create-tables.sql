@@ -16,7 +16,7 @@ create table if not exists product(
     price integer not null,
     product_type varchar(255) not null,
 
-    quantity integer,
+    quantity float,
     
     cart_id integer not null,
     foreign key (cart_id) references cart(id) on delete cascade

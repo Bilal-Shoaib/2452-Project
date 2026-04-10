@@ -1,18 +1,24 @@
-import Receipt from "./receipt";
-import Product from "./Product/product";
-import type Cashier from "./cashier";
-import type Listener from "./listener";
-
-import db from './connection.ts';
 import { Temporal } from "@js-temporal/polyfill";
 import { assert } from "../assertions.ts";
+import { parseMatrixCSV } from "../utils/parse-markov-model.ts";
+import { randomIntInclusive } from "../utils/random-number-generator.ts";
+
+import type Cashier from "./cashier";
+import type Listener from "./listener";
+import Receipt from "./receipt";
+import Product from "./Product/product";
+import ProductList from "./Product/Factory/product-list.ts";
+import ProductWithQuantity from "./Product/product-with-quantity.ts";
+
+import db from './connection.ts';
 
 /**
- * The `Cart` class represents a shopping cart that can hold products and allows for checkout.
+ * Represents a shopping cart that can hold products and allows for checkout.
  * It has methods to add items, check if it contains a specific item, check if it's empty, 
  * and register listeners for changes to the cart.
  */
 export default class Cart {
+
     public id?: number;
 
     #products: Array<Product>;
@@ -24,7 +30,87 @@ export default class Cart {
     }
 
     /**
-     * The `checkout` function creates a new `Receipt` object using the current `Cart`, a provided
+     * Auto-Buys products upto a given amount.
+     * @param amount - is the amount worth of products we need to auto-buy
+     */
+    public async autobuy(amount: number) {
+        
+        const products = ProductList.registry;
+        
+        const cheapestProduct = products.reduce(
+            (minProduct, current) => {
+                return current.price < minProduct.price ? current : minProduct;
+            }
+        );
+        
+        let autoBuyTotal = 0;
+
+        if (amount < cheapestProduct.price) {
+            throw new InvalidAutoBuyAmount();
+            
+        } else {
+            const matrixMarkovModel = await parseMatrixCSV("../../matrix.csv");
+
+            assert(products.length >= matrixMarkovModel.length, `There must be at least ${matrixMarkovModel.length} products in the database.`);
+        
+            if (this.isEmpty()) {
+                this.#products.push(cheapestProduct.clone());
+                autoBuyTotal += cheapestProduct.price;
+            }
+
+            while (amount - autoBuyTotal >= cheapestProduct.price) {
+
+                const lastAddedProduct = this.#products.at(-1)!;
+
+                const match = products.find(p =>
+                    p.price === lastAddedProduct.price &&
+                    p.constructor === lastAddedProduct.constructor
+                );
+
+                assert(match != undefined, "The last product in cart must be from the product list.");
+
+                const transitionRow = matrixMarkovModel.at(products.indexOf(match!))!;
+                let randomProductIndex = randomIntInclusive(0, transitionRow[0].denominator - 1);
+
+                assert(products.length >= transitionRow.length, `There must be at least ${matrixMarkovModel.length} products in the database.`);
+
+                let i = 0;
+                while (randomProductIndex >= transitionRow[i].numerator) {
+                    randomProductIndex -= transitionRow[i].numerator;
+                    i++;
+                }
+                const randomProduct = products.at(i)!;
+                let price = randomProduct.price;
+
+                if (randomProduct instanceof ProductWithQuantity) {
+                    randomProduct.quantity = Math.min(100, ((amount - autoBuyTotal)*100)/randomProduct.price);
+                    price = randomProduct.totalPrice();
+                }
+
+                if (amount - autoBuyTotal - price >= 0) {
+                    this.#products.push(randomProduct.clone());
+                    autoBuyTotal += price;
+                
+                } else {
+                    const cheapestProductsCount = Math.floor((amount - autoBuyTotal) / cheapestProduct.price);
+                    
+                    for (let i = 0; i < cheapestProductsCount; i++) {
+                        this.#products.push(cheapestProduct.clone());
+                        autoBuyTotal += cheapestProduct.price;
+                    }
+
+                    assert(amount - autoBuyTotal < cheapestProduct.price, "The remaining amount after adding cheapest products should be less than the price of the cheapest product.")
+
+                }
+            }
+        }
+
+        await Cart.saveCart(this);
+        this.#notifyAll();
+    };
+
+    /**
+     * Creates a new `Receipt` object using the current `Cart`, a provided
      * `Cashier`, and the current timestamp.
      * @param {Cashier} cashier - The cashier who processed the checkout.
      * @returns {Receipt} A new `Receipt` object.
@@ -38,7 +124,7 @@ export default class Cart {
     }
 
     /**
-     * The `addItem` function adds a product to the cart and notifies all listeners of the change.
+     * Adds a product to the cart and notifies all listeners of the change.
      * @param {Product} item - The product to be added to the cart.
      */
     public async addItem(item: Product) {
@@ -56,7 +142,7 @@ export default class Cart {
     }
 
     /**
-     * The `contains` function checks if a product is in the cart.
+     * Checks if a product is in the cart.
      * @param item - the product to check for in the cart
      * @returns boolean indicating if the product is in the cart
      */
@@ -68,7 +154,7 @@ export default class Cart {
     }
 
     /**
-     * The `getProductWithID` function searches for a product in the cart by its ID and returns it if
+     * Searches for a product in the cart by its ID and returns it if
      * found, otherwise it returns undefined.
      * @param {number} id - The ID of the product to search for in the cart.
      * @returns {Product | undefined} The product with the specified ID if found, otherwise undefined.
@@ -86,7 +172,7 @@ export default class Cart {
     }
 
     /**
-     * The `isEmpty` function checks if the cart is empty by verifying if the products array has a length of zero.
+     * Checks if the cart is empty by verifying if the products array has a length of zero.
      * @returns {boolean} A boolean value indicating whether the cart is empty or not.
      */
     public isEmpty(): boolean {
@@ -98,7 +184,7 @@ export default class Cart {
     }
 
     /**
-     * The function `registerListener` adds a listener to an array of listeners.
+     * Adds a listener to an array of listeners.
      * @param {Listener} listener - is being added to the list of listeners.
      */
     public registerListener(listener: Listener): void {
@@ -111,7 +197,7 @@ export default class Cart {
     }
 
     /**
-     * The `notifyAll` function iterates through all listeners and calls the `notify` method on each
+     * Iterates through all listeners and calls the `notify` method on each
      * one.
      */
     #notifyAll(): void {
@@ -125,7 +211,7 @@ export default class Cart {
     }    
 
     /**
-     * The function defines a custom iterator for a the cart instance
+     * Defines a custom iterator for a the cart instance
      * I found this to be better than revealing the products array directly.
      * I don't know much typescript so I don't know if this is optimal _:(
      */
@@ -164,6 +250,12 @@ export default class Cart {
         return cart;
     }
 
+    /**
+     * Populates the given objects with it's associated products in the database.
+     * @param cart - is the cart object that needs to be filled from persisted products.
+     * @returns {Cart} - is the cart filled with products from the database
+     * @throws {AssertionError} - If the provided cart is not already in the database.
+     */
     static async populateCart(cart: Cart): Promise<Cart> {
 
         assert(cart.id !== undefined, "Cart must have an ID to retrieve products.");
@@ -180,3 +272,4 @@ export default class Cart {
 }
 
 export class InvalidCheckoutException extends Error {}
+export class InvalidAutoBuyAmount extends Error {}

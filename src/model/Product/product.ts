@@ -1,8 +1,9 @@
 import { assert } from "../../assertions";
 
 import Cart from "../cart";
-import db from '../connection.ts'
 import Factory from "./Factory/factory.ts";
+
+import db from '../connection.ts'
 
 /** 
  * Represents a product with a price property and clonable behavior.
@@ -114,6 +115,11 @@ export default abstract class Product {
         return products;
     }
 
+    /**
+     * Given a row of the Product table in the database, returns the list of non-null and valid arguments to be passed to the product's constructor.
+     * @param databaseRow - is the row retrieved from the database
+     * @returns {args[]} - is the list of non-null arguments that will be passed to the product's contructor
+     */
     private static getConstructorArguments(databaseRow: {id: number, price: number, quantity: number}): any[] {
         const args = [];
         args.push(databaseRow.price);

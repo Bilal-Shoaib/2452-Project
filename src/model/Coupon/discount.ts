@@ -1,11 +1,12 @@
 import { assert } from "../../assertions.ts";
 
-import db from "../connection.ts";
 import type Coupon from "./coupon.ts";
 import type Receipt from "../receipt.ts";
 
+import db from "../connection.ts";
+
 /**
- * The DiscountThreshold class is only used within the Receipt class to represent
+ * The DiscountThreshold class is only used within the Discount class to represent
  * a discount threshold amount a it's corresponding discount percantage.
  * @property {number} cost - The minimum total cost required to qualify for the discount.
  * @property {number} discountPercent - The percentage of the total cost that will be discounted if the threshold is met.

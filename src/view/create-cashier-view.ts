@@ -1,10 +1,11 @@
+import { CashierFoundException, InvalidNameException, InvalidPasswordException} from "../model/cashier";
+import { showError } from "./show-error";
+
 import type CashierController from "../controller/cashier-controller";
 import type CartController from "../controller/cart-controller";
-import Cashier, { CashierFoundException, InvalidNameException, InvalidPasswordException} from "../model/cashier";
 
 /**
- * The CreateCashierView class is responsible for rendering a dialog that allows users to create a new cashier account.
- * It interacts with the CashierController to set the current cashier and the CartController to show the cart for the new cashier.
+ * Renders a dialog that allows users to create a new cashier account.
  */
 export default class CreateCashierView {
     #cashierController: CashierController;
@@ -46,8 +47,7 @@ export default class CreateCashierView {
     }
 
     /**
-     * Verifies the input for creating a new cashier. It checks if the cashier already exists and if the input is valid.
-     * If the cashier is successfully created, it sets the current cashier and shows the cart for that cashier.
+     * Verifies the input for creating a new cashier.
      * If there are any errors, it displays appropriate error messages.
      */
     async #verify() {
@@ -60,42 +60,28 @@ export default class CreateCashierView {
             //  if no, we will add a new cashier
 
             try {
-                const cashier = await Cashier.newCashier(name, password);
+                const cashier = await this.#cashierController.getNewCashier(name, password);
                 //if the cashier does not exist, then we can proceed
 
                 this.#cashierController.setCurrentCashier(cashier);
-                this.#cartController.showCart(cashier.cart, cashier);
+                this.#cartController.showCart(cashier.currentCart, cashier);
                 
                 this.#dialog.close();
                 this.#dialog.remove();
 
             } catch (e: any) {
                 if (e instanceof CashierFoundException) {
-                    this.#showError("A cashier with this name already exists. Please choose another name.");    
+                    showError(this.#dialog, "A cashier with this name already exists. Please choose another name.");    
                 }
             }
 
         } catch (e: any) {
             
                 if (e instanceof InvalidNameException) {
-                    this.#showError("Invalid cashier name, cashier's name must have at least one character (e.g., Adam).");
+                    showError(this.#dialog, "Invalid cashier name, cashier's name must have at least one character (e.g., Adam).");
                 } else if (e instanceof InvalidPasswordException) {
-                    this.#showError("Invalid password, password must have at least one character (e.g., SecurePassword).");
+                    showError(this.#dialog, "Invalid password, password must have at least one character (e.g., SecurePassword).");
                 }
         }
-    }
-
-    /**
-     * Displays an error message in the dialog and highlights the input fields in red.
-     * @param message The error message to display.
-     */
-    #showError(message: string) {
-        const errorEl = this.#dialog.querySelector("#error")!;
-        errorEl.textContent = message;
-
-        // Highlight inputs in red
-        this.#dialog.querySelectorAll("input").forEach(input => {
-            input.setAttribute("style", "border-color: red");
-        });
     }
 }

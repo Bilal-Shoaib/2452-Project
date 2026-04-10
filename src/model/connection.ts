@@ -1,4 +1,5 @@
 import { PGlite } from '@electric-sql/pglite';
+
 import ddl from '../../create-tables.sql?raw';
 
 const src = import.meta.env.VITE_DB_URL;

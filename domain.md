@@ -97,6 +97,7 @@ classDiagram
 
         +~ number id
 
+        + autobuy(number amount): void
         + checkout() Receipt
         + addItem(Product item) void
         + contains(Product item) boolean
@@ -117,7 +118,7 @@ classDiagram
         + readonly Temporal.Instant timestamp
         
         + readonly number totalCost
-        - number totalDiscount
+        - number totalSavings
 
         + readonly Array<Coupon> appliedCoupons
         
@@ -141,10 +142,7 @@ classDiagram
         +~ readonly string name
         + readonly string password
 
-        - Cart cart
-
-        + get cart() Cart
-        + set cart(Cart cart) void
+        + Cart currentCart
 
         + static saveCashier(Cashier cashier) Promise~Cashier~
         + static getCashier(string name, string password) Promise~Cashier~
@@ -175,7 +173,7 @@ classDiagram
     Cashier "*" --* "1" Cart
 ```
 
-Comments for Phase-2 Design:
+Comments for Design:
 
 1. Product subclasses (i.e., Fruit) do not have any properties of their own, they only initialize the Product superclass and clone themselves when needed.
 2. BOGO and Discount have different properties and different tables in the database. To save an instance of a BOGO or a Discount while adhering to OCP, I had to define the saveCoupon method in the Coupon interface that leaves specific persisting details to the implementations.

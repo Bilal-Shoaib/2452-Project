@@ -1,10 +1,12 @@
-import CartController from "../controller/cart-controller.ts";
+import { showError } from "./show-error.ts";
 import ProductWithQuantity, { InvalidProductQuantityException } from "../model/Product/product-with-quantity.ts";
-import Product from "../model/Product/product.ts";
+
+import type CartController from "../controller/cart-controller.ts";
+import type Product from "../model/Product/product.ts";
+
 
 /**
- * The `CreateProductView` class in TypeScript creates a dialog for selecting and adding fruit or
- * vegetable products to a cart with price validation.
+ * Creates a dialog for selecting products to add to cart.
  */
 export default class CreateProductView {
 
@@ -29,8 +31,8 @@ export default class CreateProductView {
     }
 
     /**
-     * The function `selectProductType` displays a dialog for selecting between fruit and vegetable
-     * products, then based on the user's selection, adds a product to cart.
+     * Displays a dialog for selecting products, 
+     *      then based on the user's selection, adds that product to cart.
      */
     #selectProductType(productList: Array<Product>): void {
 
@@ -70,7 +72,7 @@ export default class CreateProductView {
 
     /**
      * Links the buttons for each product to an event listener that adds the selected product to the cart.
-     * If the product is a smoothie, it prompts the user to enter additional details before adding it to the cart.
+     * If the product is a product with quantity, it prompts the user to enter additional details before adding it to the cart.
      * @param productList the list of products available to be purchased.
      */
     #linkButtons(productList: Array<Product>) {
@@ -94,8 +96,8 @@ export default class CreateProductView {
     }
 
     /**
-     * Displays a dialog for entering additional details for a smoothie product, such as quantity.
-     * Validates the input and updates the smoothie product accordingly.
+     * Displays a dialog for entering additional details for a product with quantity, such as quantity.
+     * Validates the input and updates the product with quantity accordingly.
      * @param product the product with quantity for which details are being entered.
      * @returns a promise that resolves to the updated product with quantity with the entered details.
      */
@@ -125,7 +127,7 @@ export default class CreateProductView {
     }
 
     /**
-     * Validates the quantity input for a smoothie product and updates the product's quantity if valid.
+     * Validates the quantity input for a product with quantity and updates the product's quantity if valid.
      * If the input is invalid, it displays an error message.
      * @param product the product with quantity for which the quantity is being verified.
      */
@@ -138,23 +140,8 @@ export default class CreateProductView {
     
         } catch (e: any) {
             if (e instanceof InvalidProductQuantityException) {
-                this.#showError("Invalid product quantity, please enter a non-negative integer.");
+                showError(this.#dialog, "Invalid product quantity, please enter a non-negative integer.");
             }
         }
     }
-
-    /**
-     * Displays an error message in the dialog and highlights the input fields in red.
-     * @param message The error message to display.
-     */
-    #showError(message: string) {
-        const errorEl = this.#dialog.querySelector("#error")!;
-        errorEl.textContent = message;
-
-        // Highlight the input in red
-        this.#dialog.querySelectorAll("input").forEach(input => {
-            input.setAttribute("style", "border-color: red");
-        });
-    }
-
 }

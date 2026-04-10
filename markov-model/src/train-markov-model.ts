@@ -1,14 +1,5 @@
 import { readCSV } from "./csv-reader";
-
-export default class MatrixEntry {
-    numerator: number;
-    denominator: number;
-
-    constructor (numerator: number, denominator: number) {
-        this.numerator = numerator;
-        this.denominator = denominator;
-    }
-}
+import MatrixEntry from "./matrix-entry";
 
 export async function trainMarkovModel(fileName: string, dimension: number) {
     const alphabetMapping = mapAlphabets(dimension);

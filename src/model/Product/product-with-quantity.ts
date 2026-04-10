@@ -1,4 +1,5 @@
 import { assert } from "../../assertions";
+
 import Product from "./product";
 
 /**

@@ -1,5 +1,5 @@
 import * as fs from "fs/promises";
-import MatrixEntry from "./train-markov-model";
+import MatrixEntry from "./matrix-entry";
 
 /**
  * Persists an adjacency matrix to a CSV file.
